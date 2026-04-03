@@ -1,0 +1,19 @@
+.player-milestones-tab-button {
+  min-width: 1.75rem;
+  text-align: center;
+  font-weight: 700;
+}
+
+.player-milestones-tab-panel {
+  padding: 0.75rem 0;
+}
+
+.player-milestones-placeholder {
+  margin: 0;
+  color: var(--color-text-secondary, #666);
+  font-style: italic;
+}
+
+.player-milestones-settings {
+  padding: 0.75rem;
+}

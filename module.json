@@ -1,0 +1,29 @@
+{
+  "id": "player-milestones",
+  "title": "Player Milestones",
+  "description": "Personal milestone UI scaffolding for DnD5e character sheets.",
+  "version": "0.1.0",
+  "authors": [
+    {
+      "name": "UserPC"
+    }
+  ],
+  "compatibility": {
+    "minimum": "13",
+    "verified": "13"
+  },
+  "relationships": {
+    "systems": [
+      {
+        "id": "dnd5e",
+        "type": "system",
+        "compatibility": {
+          "minimum": "5",
+          "verified": "5"
+        }
+      }
+    ]
+  },
+  "esmodules": ["dist/player-milestones.js"],
+  "styles": ["dist/player-milestones.css"]
+}
