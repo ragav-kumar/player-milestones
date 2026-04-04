@@ -40,4 +40,12 @@ describe("milestones tab template", () => {
     expect(template).toContain('fa-solid fa-floppy-disk');
     expect(template).toContain('fa-solid fa-trash');
   });
+
+  it("marks title and description inputs so Enter can trigger the closest save or add action", () => {
+    const templatePath = resolve(import.meta.dirname, "../templates/milestones-tab.hbs");
+    const template = readFileSync(templatePath, "utf8");
+
+    expect(template).toContain('data-enter-action="add-custom-item"');
+    expect(template).toContain('data-enter-action="save-custom-item"');
+  });
 });

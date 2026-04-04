@@ -99,6 +99,9 @@ function bindMilestonesTabEvents(
   panel.addEventListener("click", (event) => {
     void onPanelClick(event, actor, application, root);
   });
+  panel.addEventListener("keydown", (event) => {
+    onPanelKeyDown(event);
+  });
 }
 
 async function onPanelChange(
@@ -136,6 +139,34 @@ async function onPanelChange(
       isCustom: input.dataset.customItem === "true"
     })
   );
+}
+
+function onPanelKeyDown(event: KeyboardEvent): void {
+  if (event.key !== "Enter" || event.shiftKey || event.ctrlKey || event.altKey || event.metaKey) {
+    return;
+  }
+
+  if (!(event.target instanceof HTMLInputElement)) {
+    return;
+  }
+
+  const action = event.target.dataset.enterAction;
+  if (action !== "add-custom-item" && action !== "save-custom-item") {
+    return;
+  }
+
+  event.preventDefault();
+
+  const rowSelector =
+    action === "add-custom-item" ? "[data-custom-add-row='true']" : "[data-custom-item-row='true']";
+  const row = event.target.closest<HTMLElement>(rowSelector);
+  const actionButton = row?.querySelector<HTMLElement>(`[data-action='${action}']`);
+
+  if (!actionButton) {
+    return;
+  }
+
+  actionButton.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
 }
 
 async function onPanelClick(
