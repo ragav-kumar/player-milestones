@@ -1,13 +1,19 @@
 import { MODULE_ID } from "../constants";
-import { getStandardMilestonesSettings } from "../settings/standardMilestones";
+import {
+  getStandardMilestonesSettings,
+  type StandardMilestonesSettingsData
+} from "../settings/standardMilestones";
 import { beginExclusiveCustomItemEdit, discardCustomItemEdit } from "./customItemEditMode";
 import {
   ACTOR_MILESTONES_FLAG_KEY,
+  adjustMilestoneProgress,
+  applyLevelCostToProgress,
   buildMilestonesTabData,
   normalizeActorMilestonesState,
   removeCustomMilestone,
   saveActorMilestonesState,
   setMilestoneChecked,
+  setMilestoneProgressCurrent,
   upsertCustomMilestone,
   type ActorFlagLike,
   type ActorMilestonesState,
@@ -29,14 +35,28 @@ interface MilestonesTemplateSection extends Record<string, unknown> {
   items: MilestonesTabItemData[];
 }
 
+interface MilestonesTemplateProgress extends Record<string, unknown> {
+  current: number;
+  targetCost: number;
+  isReady: boolean;
+  canEditCurrent: boolean;
+  canLevelUp: boolean;
+}
+
 interface MilestonesTemplateContext extends Record<string, unknown> {
   topMatterHtml: string;
+  progress: MilestonesTemplateProgress;
   hasSections: boolean;
   sections: MilestonesTemplateSection[];
 }
 
 interface FormActionElement extends Element {
   dataset: DOMStringMap;
+}
+
+interface UpdateableActorLike extends ActorFlagLike {
+  system?: unknown;
+  update?: (data: Record<string, unknown>) => Promise<unknown>;
 }
 
 /**
@@ -60,11 +80,19 @@ export async function renderMilestonesTab(
   const settings = getStandardMilestonesSettings();
   const rawState = actor.getFlag(MODULE_ID, ACTOR_MILESTONES_FLAG_KEY);
   const normalizedState = normalizeActorMilestonesState(rawState, settings);
-  const tabData = buildMilestonesTabData(settings, normalizedState);
+  const stateForRender = initializeProgressState(rawState, normalizedState, actor, settings);
+  const tabData = buildMilestonesTabData(settings, stateForRender);
   const canManageCustomItems = canCurrentUserManageCustomItems();
   const canToggleMilestones = canCurrentUserToggleMilestones(application, actor);
   const context: MilestonesTemplateContext = {
     topMatterHtml: await enrichTopMatterHtml(tabData.topMatter),
+    progress: {
+      current: tabData.progress.current,
+      targetCost: tabData.progress.targetCost,
+      isReady: tabData.progress.current >= tabData.progress.targetCost,
+      canEditCurrent: canManageCustomItems,
+      canLevelUp: canToggleMilestones
+    },
     hasSections: tabData.sections.length > 0,
     sections: tabData.sections.map((section) => ({
       ...section,
@@ -77,8 +105,8 @@ export async function renderMilestonesTab(
   panel.innerHTML = await renderMilestonesTemplate(context);
   bindMilestonesTabEvents(panel, actor, application, root);
 
-  if (JSON.stringify(rawState ?? null) !== JSON.stringify(normalizedState)) {
-    void saveActorMilestonesState(actor, normalizedState);
+  if (JSON.stringify(rawState ?? null) !== JSON.stringify(stateForRender)) {
+    void saveActorMilestonesState(actor, stateForRender);
   }
 }
 
@@ -116,6 +144,18 @@ async function onPanelChange(
   }
 
   const input = event.target;
+
+  if (input.dataset.progressCurrentInput === "true") {
+    if (!canCurrentUserManageCustomItems()) {
+      return;
+    }
+
+    await updateActorMilestones(actor, application, root, (state) =>
+      setMilestoneProgressCurrent(state, Number(input.value))
+    );
+    return;
+  }
+
   if (input.dataset.milestoneCheckbox !== "true") {
     return;
   }
@@ -132,14 +172,20 @@ async function onPanelChange(
     return;
   }
 
-  await updateActorMilestones(actor, application, root, (state) =>
-    setMilestoneChecked(state, {
+  await updateActorMilestones(actor, application, root, (state) => {
+    const checkedState = setMilestoneChecked(state, {
       sectionId,
       itemId,
       checked: input.checked,
       isCustom: input.dataset.customItem === "true"
-    })
-  );
+    });
+
+    return adjustMilestoneProgress(checkedState, input.checked ? 1 : -1);
+  });
+
+  if (input.checked) {
+    await grantActorInspirationIfMissing(actor);
+  }
 }
 
 function onPanelKeyDown(event: KeyboardEvent): void {
@@ -195,6 +241,22 @@ async function onPanelClick(
 
   if (isCustomManagementAction && !canCurrentUserManageCustomItems()) {
     event.preventDefault();
+    return;
+  }
+
+  if (action === "level-up") {
+    event.preventDefault();
+
+    if (!canCurrentUserToggleMilestones(application, actor)) {
+      return;
+    }
+
+    const settings = getStandardMilestonesSettings();
+    const nextTargetCost = resolveLevelCostFromActor(actor, settings);
+
+    await updateActorMilestones(actor, application, root, (state) =>
+      applyLevelCostToProgress(state, nextTargetCost)
+    );
     return;
   }
 
@@ -313,6 +375,17 @@ async function updateActorMilestones(
   await renderMilestonesTab(application, root);
 }
 
+export async function grantActorInspirationIfMissing(actor: unknown): Promise<void> {
+  const updateableActor = actor as UpdateableActorLike;
+  if (typeof updateableActor.update !== "function" || actorHasInspiration(updateableActor)) {
+    return;
+  }
+
+  await updateableActor.update({
+    "system.attributes.inspiration": true
+  });
+}
+
 function resolveActor(application: unknown): ActorFlagLike | null {
   const sheet = application as SheetApplicationLike;
   const candidates = [sheet.actor, sheet.object, sheet.document];
@@ -355,14 +428,74 @@ async function renderMilestonesTemplate(context: MilestonesTemplateContext): Pro
   );
 }
 
+function initializeProgressState(
+  rawState: unknown,
+  normalizedState: ActorMilestonesState,
+  actor: ActorFlagLike,
+  settings: StandardMilestonesSettingsData
+): ActorMilestonesState {
+  const rawRecord = asRecord(rawState);
+  const rawProgress = asRecord(rawRecord?.progress);
+  const storedTargetCost = readNumericValue(rawProgress?.targetCost);
+
+  if (storedTargetCost !== null && storedTargetCost >= 1) {
+    return normalizedState;
+  }
+
+  return {
+    ...normalizedState,
+    progress: {
+      current: normalizedState.progress?.current ?? 0,
+      targetCost: resolveLevelCostFromActor(actor, settings)
+    }
+  };
+}
+
+function resolveLevelCostFromActor(
+  actor: unknown,
+  settings: StandardMilestonesSettingsData
+): number {
+  const configuredLevels = Object.keys(settings.levelCosts)
+    .map((level) => Number(level))
+    .filter((level) => Number.isFinite(level) && level >= 1);
+  const maxConfiguredLevel = configuredLevels.length > 0 ? Math.max(...configuredLevels) : 1;
+  const clampedLevel = Math.min(maxConfiguredLevel, Math.max(1, resolveActorLevel(actor)));
+
+  return Math.max(1, readNumericValue(settings.levelCosts[String(clampedLevel)]) ?? 1);
+}
+
+function resolveActorLevel(actor: unknown): number {
+  const actorRecord = asRecord(actor);
+  const system = asRecord(actorRecord?.system);
+  const details = asRecord(system?.details);
+  const detailLevel = readNumericValue(details?.level);
+
+  if (detailLevel !== null && detailLevel >= 1) {
+    return detailLevel;
+  }
+
+  const classes = asRecord(system?.classes);
+  const totalClassLevels = Object.values(classes ?? {}).reduce<number>((sum, entry) => {
+    const classRecord = asRecord(entry);
+    const directLevel = readNumericValue(classRecord?.levels);
+    const nestedLevel = readNumericValue(asRecord(classRecord?.system)?.levels);
+
+    return sum + Math.max(0, directLevel ?? nestedLevel ?? 0);
+  }, 0);
+
+  return totalClassLevels >= 1 ? totalClassLevels : 1;
+}
+
 function renderMilestonesFallback(context: MilestonesTemplateContext): string {
+  const headingHtml = "<h3>Personal Milestones</h3>";
   const topMatterHtml =
     context.topMatterHtml !== ""
       ? `<div class="player-milestones-tab__top-matter">${context.topMatterHtml}</div>`
       : "";
+  const progressHtml = renderProgressFallback(context.progress);
 
   if (!context.hasSections) {
-    return `${topMatterHtml}<p class="player-milestones-empty-state">No shared milestone sections are configured yet.</p>`;
+    return `${headingHtml}${topMatterHtml}${progressHtml}<p class="player-milestones-empty-state">No shared milestone sections are configured yet.</p>`;
   }
 
   const sectionsHtml = context.sections
@@ -421,7 +554,35 @@ function renderMilestonesFallback(context: MilestonesTemplateContext): string {
     })
     .join("");
 
-  return `${topMatterHtml}<div class="player-milestones-tab__sections">${sectionsHtml}</div>`;
+  return `${headingHtml}${topMatterHtml}${progressHtml}<div class="player-milestones-tab__sections">${sectionsHtml}</div>`;
+}
+
+function renderProgressFallback(progress: MilestonesTemplateProgress): string {
+  const currentValueHtml = progress.canEditCurrent
+    ? `<input type="number" min="0" step="1" value="${progress.current}" data-progress-current-input="true" aria-label="Current milestone progress" />`
+    : `<strong>${progress.current}</strong>`;
+  const readyHtml = progress.isReady
+    ? '<span class="player-milestones-tab__progress-ready">Ready to level up</span>'
+    : "";
+  const disabledAttribute = progress.canLevelUp ? "" : " disabled";
+
+  return `
+    <div class="player-milestones-tab__progress" data-milestones-progress="true">
+      <div class="player-milestones-tab__progress-main">
+        <span class="player-milestones-tab__progress-fraction">${currentValueHtml} / <strong>${progress.targetCost}</strong></span>
+        <div class="player-milestones-tab__progress-actions">
+          ${readyHtml}
+          <button
+            type="button"
+            class="player-milestones-tab__button"
+            data-action="level-up"${disabledAttribute}
+          >
+            Levelled Up
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 function renderItemFallback(
@@ -495,6 +656,18 @@ function renderItemFallback(
   `;
 }
 
+function actorHasInspiration(actor: UpdateableActorLike): boolean {
+  const system = asRecord(actor.system);
+  const attributes = asRecord(system?.attributes);
+  const inspiration = attributes?.inspiration;
+
+  if (inspiration === true) {
+    return true;
+  }
+
+  return asRecord(inspiration)?.value === true;
+}
+
 function canCurrentUserManageCustomItems(): boolean {
   return typeof game !== "undefined" && game.user?.isGM === true;
 }
@@ -527,6 +700,28 @@ function canCurrentUserToggleMilestones(application: unknown, actor: ActorFlagLi
   }
 
   return actorWithOwnership.testUserPermission(game.user, "OWNER");
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value !== null && typeof value === "object" ? (value as Record<string, unknown>) : null;
+}
+
+function readNumericValue(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return Math.trunc(value);
+  }
+
+  if (typeof value === "string" && value.trim() !== "") {
+    const numericValue = Number(value);
+    return Number.isFinite(numericValue) ? Math.trunc(numericValue) : null;
+  }
+
+  const record = asRecord(value);
+  if (!record) {
+    return null;
+  }
+
+  return readNumericValue(record.value);
 }
 
 function escapeHtml(value: string): string {

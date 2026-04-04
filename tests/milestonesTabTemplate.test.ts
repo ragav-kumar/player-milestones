@@ -80,6 +80,25 @@ describe("milestones tab template", () => {
     expect(stylesheet).toContain("opacity:");
   });
 
+  it("renders a next-level progress tracker directly under the Personal Milestones heading", () => {
+    const templatePath = resolve(import.meta.dirname, "../templates/milestones-tab.hbs");
+    const template = readFileSync(templatePath, "utf8");
+
+    expect(template).toContain("<h3>Personal Milestones</h3>");
+    expect(template).toContain('data-milestones-progress="true"');
+    expect(template).toContain("{{progress.current}} / {{progress.targetCost}}");
+    expect(template).toContain('data-action="level-up"');
+  });
+
+  it("makes the current progress editable only for GMs and shows a ready-to-level indicator", () => {
+    const templatePath = resolve(import.meta.dirname, "../templates/milestones-tab.hbs");
+    const template = readFileSync(templatePath, "utf8");
+
+    expect(template).toContain("{{#if progress.canEditCurrent}}");
+    expect(template).toContain('data-progress-current-input="true"');
+    expect(template).toContain("{{#if progress.isReady}}");
+  });
+
   it("uses native details/summary markup for section accordions", () => {
     const templatePath = resolve(import.meta.dirname, "../templates/milestones-tab.hbs");
     const template = readFileSync(templatePath, "utf8");

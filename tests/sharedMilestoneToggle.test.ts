@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  adjustMilestoneProgress,
   getActorMilestonesState,
   saveActorMilestonesState,
   setMilestoneChecked,
   type ActorFlagLike
 } from "../src/dnd5e/actorMilestones";
+import { grantActorInspirationIfMissing } from "../src/dnd5e/renderMilestonesTab";
 import type { StandardMilestonesSettingsData } from "../src/settings/standardMilestones";
 
 function createSettingsFixture(): StandardMilestonesSettingsData {
@@ -66,6 +68,22 @@ class MergeStyleFlagActor implements ActorFlagLike {
 
 }
 
+class InspirationFlagActor extends MergeStyleFlagActor {
+  system = {
+    attributes: {
+      inspiration: false
+    }
+  };
+
+  updateCalls: Array<Record<string, unknown>> = [];
+
+  update(data: Record<string, unknown>): Promise<unknown> {
+    this.updateCalls.push(data);
+    this.system.attributes.inspiration = true;
+    return Promise.resolve(data);
+  }
+}
+
 describe("shared milestone toggle persistence", () => {
   it("fully replaces the persisted flag so a shared milestone can be unchecked again", async () => {
     const settings = createSettingsFixture();
@@ -90,6 +108,46 @@ describe("shared milestone toggle persistence", () => {
     expect(getActorMilestonesState(actor, settings).sections.combat?.checked).toEqual({
       narration: false
     });
+  });
+
+  it("tracks the current milestone counter as items are checked and unchecked", async () => {
+    const settings = createSettingsFixture();
+    const actor = new MergeStyleFlagActor();
+
+    const checked = adjustMilestoneProgress(
+      setMilestoneChecked(getActorMilestonesState(actor, settings), {
+        sectionId: "combat",
+        itemId: "narration",
+        checked: true,
+        isCustom: false
+      }),
+      1
+    );
+    await saveActorMilestonesState(actor, checked);
+
+    expect(getActorMilestonesState(actor, settings).progress.current).toBe(1);
+
+    const unchecked = adjustMilestoneProgress(
+      setMilestoneChecked(getActorMilestonesState(actor, settings), {
+        sectionId: "combat",
+        itemId: "narration",
+        checked: false,
+        isCustom: false
+      }),
+      -1
+    );
+    await saveActorMilestonesState(actor, unchecked);
+
+    expect(getActorMilestonesState(actor, settings).progress.current).toBe(0);
+  });
+
+  it("grants inspiration only when the actor does not already have it", async () => {
+    const actor = new InspirationFlagActor();
+
+    await grantActorInspirationIfMissing(actor);
+    await grantActorInspirationIfMissing(actor);
+
+    expect(actor.updateCalls).toEqual([{ "system.attributes.inspiration": true }]);
   });
 });
 

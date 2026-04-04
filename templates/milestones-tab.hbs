@@ -1,6 +1,45 @@
 <section class="player-milestones-tab-content">
+  <h3>Personal Milestones</h3>
+
+  <div class="player-milestones-tab__progress" data-milestones-progress="true">
+    <div class="player-milestones-tab__progress-main">
+      <span
+        class="player-milestones-tab__progress-fraction"
+        aria-label="Current milestone progress: {{progress.current}} / {{progress.targetCost}}"
+      >
+        {{#if progress.canEditCurrent}}
+          <input
+            type="number"
+            min="0"
+            step="1"
+            value="{{progress.current}}"
+            data-progress-current-input="true"
+            aria-label="Current milestone progress"
+          />
+        {{else}}
+          <strong>{{progress.current}}</strong>
+        {{/if}}
+        / <strong>{{progress.targetCost}}</strong>
+      </span>
+
+      <div class="player-milestones-tab__progress-actions">
+        {{#if progress.isReady}}
+          <p class="player-milestones-tab__progress-ready">Ready to level up</p>
+        {{/if}}
+
+        <button
+          type="button"
+          class="player-milestones-tab__button"
+          data-action="level-up"
+          {{#unless progress.canLevelUp}}disabled{{/unless}}
+        >
+          Level up
+        </button>
+      </div>
+    </div>
+  </div>
+
   {{#if topMatterHtml}}
-    <h3>Personal Milestones</h3>
     <div class="player-milestones-tab__top-matter">
       {{{topMatterHtml}}}
     </div>

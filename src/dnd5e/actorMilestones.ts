@@ -18,8 +18,14 @@ export interface ActorMilestoneSectionState {
   customItems: ActorMilestoneCustomItem[];
 }
 
+export interface ActorMilestonesProgressState {
+  current: number;
+  targetCost: number;
+}
+
 export interface ActorMilestonesState {
   sections: Record<string, ActorMilestoneSectionState>;
+  progress: ActorMilestonesProgressState;
 }
 
 export interface MilestonesTabItemData {
@@ -38,6 +44,7 @@ export interface MilestonesTabSectionData {
 
 export interface MilestonesTabData {
   topMatter: string;
+  progress: ActorMilestonesProgressState;
   sections: MilestonesTabSectionData[];
 }
 
@@ -79,7 +86,10 @@ export function normalizeActorMilestonesState(
     settings.sections.map((section) => [section.id, normalizeSectionState(sourceSections?.[section.id], section)])
   );
 
-  return { sections };
+  return {
+    sections,
+    progress: normalizeProgressState(source?.progress, settings)
+  };
 }
 
 /**
@@ -92,7 +102,75 @@ export function buildMilestonesTabData(
 ): MilestonesTabData {
   return {
     topMatter: settings.topMatter,
+    progress: cloneProgressState(state.progress, getDefaultTargetCost(settings)),
     sections: settings.sections.map((section) => buildSectionData(section, state.sections[section.id]))
+  };
+}
+
+/**
+ * Adjusts the current milestone progress counter by a positive or negative delta.
+ */
+export function adjustMilestoneProgress(
+  state: ActorMilestonesState,
+  delta: number
+): ActorMilestonesState {
+  const progress = cloneProgressState(state.progress);
+  const nextCurrent = Math.max(0, progress.current + normalizeInteger(delta, 0));
+
+  return {
+    ...state,
+    progress: {
+      ...progress,
+      current: nextCurrent
+    }
+  };
+}
+
+/**
+ * Sets the current progress counter directly, clamping it to a non-negative integer.
+ */
+export function setMilestoneProgressCurrent(
+  state: ActorMilestonesState,
+  current: number
+): ActorMilestonesState {
+  const progress = cloneProgressState(state.progress);
+
+  return {
+    ...state,
+    progress: {
+      ...progress,
+      current: normalizeInteger(current, 0, { minimum: 0 })
+    }
+  };
+}
+
+/**
+ * Applies a newly resolved level cost to the tracker, resetting current progress only when
+ * the target cost actually changes.
+ */
+export function applyLevelCostToProgress(
+  state: ActorMilestonesState,
+  targetCost: number
+): ActorMilestonesState {
+  const progress = cloneProgressState(state.progress);
+  const normalizedTargetCost = normalizeInteger(targetCost, progress.targetCost || 1, { minimum: 1 });
+
+  if (progress.targetCost === normalizedTargetCost) {
+    return {
+      ...state,
+      progress: {
+        ...progress,
+        targetCost: normalizedTargetCost
+      }
+    };
+  }
+
+  return {
+    ...state,
+    progress: {
+      current: 0,
+      targetCost: normalizedTargetCost
+    }
   };
 }
 
@@ -115,7 +193,8 @@ export function setMilestoneChecked(
             item.id === input.itemId ? { ...item, checked: input.checked } : item
           )
         }
-      }
+      },
+      progress: cloneProgressState(state.progress)
     };
   }
 
@@ -129,7 +208,8 @@ export function setMilestoneChecked(
         ...section,
         checked: nextChecked
       }
-    }
+    },
+    progress: cloneProgressState(state.progress)
   };
 }
 
@@ -172,7 +252,8 @@ export function upsertCustomMilestone(
         ...section,
         customItems
       }
-    }
+    },
+    progress: cloneProgressState(state.progress)
   };
 }
 
@@ -195,7 +276,8 @@ export function removeCustomMilestone(
         ...section,
         customItems: section.customItems.filter((item) => item.id !== input.itemId)
       }
-    }
+    },
+    progress: cloneProgressState(state.progress)
   };
 }
 
@@ -271,6 +353,15 @@ function normalizeSectionState(
   };
 }
 
+function normalizeProgressState(
+  value: unknown,
+  settings: StandardMilestonesSettingsData
+): ActorMilestonesProgressState {
+  const record = asRecord(value);
+
+  return cloneProgressState(record ?? undefined, getDefaultTargetCost(settings));
+}
+
 function normalizeCustomItem(value: unknown): ActorMilestoneCustomItem | null {
   const record = asRecord(value);
   if (!record) {
@@ -309,9 +400,38 @@ function getOrCreateSectionState(
       };
 }
 
+function cloneProgressState(
+  value: Partial<ActorMilestonesProgressState> | Record<string, unknown> | undefined,
+  fallbackTargetCost = 1
+): ActorMilestonesProgressState {
+  const current = normalizeInteger(value?.current, 0, { minimum: 0 });
+  const targetCost = normalizeInteger(value?.targetCost, fallbackTargetCost, { minimum: 1 });
+
+  return {
+    current,
+    targetCost
+  };
+}
+
+function getDefaultTargetCost(settings: StandardMilestonesSettingsData): number {
+  return normalizeInteger(settings.levelCosts["1"], 1, { minimum: 1 });
+}
+
 function createStableId(prefix: string): string {
   const uuid = globalThis.crypto?.randomUUID?.();
   return `${prefix}-${uuid ?? Math.random().toString(36).slice(2, 10)}`;
+}
+
+function normalizeInteger(
+  value: unknown,
+  fallback: number,
+  options: { minimum?: number } = {}
+): number {
+  const numericValue = typeof value === "number" ? value : Number(value);
+  const resolved = Number.isFinite(numericValue) ? Math.trunc(numericValue) : Math.trunc(fallback);
+  const minimum = options.minimum ?? Number.MIN_SAFE_INTEGER;
+
+  return Math.max(minimum, resolved);
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {

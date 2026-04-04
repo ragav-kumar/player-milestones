@@ -18,6 +18,53 @@
   min-width: 0;
 }
 
+.player-milestones-tab__progress {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border: 1px solid var(--color-border-light-primary, #c9c7b8);
+  border-radius: 0.5rem;
+  background: rgb(0 0 0 / 3%);
+}
+
+.player-milestones-tab__progress-main {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.player-milestones-tab__progress-fraction {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+  font-weight: 600;
+}
+
+.player-milestones-tab__progress-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: flex-end;
+  margin-left: auto;
+}
+
+.player-milestones-tab__progress-fraction input[type="number"] {
+  width: 4.5rem;
+  text-align: center;
+}
+
+.player-milestones-tab__progress-ready {
+  margin: 0;
+  color: #7fb685;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
 .player-milestones-tab__top-matter {
   padding: 0.75rem;
   border: 1px solid var(--color-border-light-primary, #c9c7b8);
@@ -219,6 +266,10 @@
 
 .player-milestones-tab__button--danger {
   color: #d17b7b;
+}
+
+.player-milestones-tab__button {
+  padding: .2rem .75rem;
 }
 
 .player-milestones-empty-state,

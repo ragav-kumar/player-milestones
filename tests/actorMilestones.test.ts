@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  adjustMilestoneProgress,
+  applyLevelCostToProgress,
   buildMilestonesTabData,
   normalizeActorMilestonesState,
   removeCustomMilestone,
   setMilestoneChecked,
+  setMilestoneProgressCurrent,
   upsertCustomMilestone,
   type ActorMilestonesState
 } from "../src/dnd5e/actorMilestones";
@@ -100,6 +103,10 @@ describe("actor milestone state", () => {
             }
           ]
         }
+      },
+      progress: {
+        current: 0,
+        targetCost: 3
       }
     } satisfies ActorMilestonesState;
 
@@ -125,6 +132,10 @@ describe("actor milestone state", () => {
           checked: {},
           customItems: []
         }
+      },
+      progress: {
+        current: 0,
+        targetCost: 3
       }
     });
 
@@ -152,6 +163,43 @@ describe("actor milestone state", () => {
         isCustom: true
       }
     ]);
+  });
+
+  it("tracks next-level progress, supports GM overrides, and only resets when the level cost changes", () => {
+    const settings = createSettingsFixture();
+    const initial = normalizeActorMilestonesState(undefined, settings);
+
+    expect(initial.progress).toEqual({
+      current: 0,
+      targetCost: 3
+    });
+
+    const gainedTwo = adjustMilestoneProgress(initial, 2);
+    expect(gainedTwo.progress).toEqual({
+      current: 2,
+      targetCost: 3
+    });
+
+    const manuallyAdjusted = setMilestoneProgressCurrent(gainedTwo, 7);
+    expect(manuallyAdjusted.progress).toEqual({
+      current: 7,
+      targetCost: 3
+    });
+
+    const sameCost = applyLevelCostToProgress(manuallyAdjusted, 3);
+    expect(sameCost.progress).toEqual({
+      current: 7,
+      targetCost: 3
+    });
+
+    const newCost = applyLevelCostToProgress(manuallyAdjusted, 4);
+    expect(newCost.progress).toEqual({
+      current: 0,
+      targetCost: 4
+    });
+
+    const floored = adjustMilestoneProgress(newCost, -99);
+    expect(floored.progress.current).toBe(0);
   });
 
   it("adds, edits, toggles, and removes custom items within a section", () => {
