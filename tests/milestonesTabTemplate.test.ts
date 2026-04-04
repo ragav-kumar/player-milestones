@@ -79,4 +79,13 @@ describe("milestones tab template", () => {
     expect(stylesheet).toContain(".player-milestones-tab__item--checked");
     expect(stylesheet).toContain("opacity:");
   });
+
+  it("uses native details/summary markup for section accordions", () => {
+    const templatePath = resolve(import.meta.dirname, "../templates/milestones-tab.hbs");
+    const template = readFileSync(templatePath, "utf8");
+
+    expect(template).toContain("<details");
+    expect(template).toContain('class="player-milestones-tab__section"');
+    expect(template).toContain('<summary class="player-milestones-tab__section-header">');
+  });
 });

@@ -40,18 +40,50 @@
 }
 
 .player-milestones-tab__section {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
   padding: 0.75rem;
   border: 1px solid var(--color-border-light-tertiary, #d9d7ca);
   border-radius: 0.5rem;
   background: rgb(255 255 255 / 3%);
 }
 
+.player-milestones-tab__section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.player-milestones-tab__section-header::marker,
+.player-milestones-tab__section-header::-webkit-details-marker {
+  display: none;
+  content: "";
+}
+
+.player-milestones-tab__section-header::after {
+  content: "▸";
+  color: var(--color-text-secondary, #b9b6aa);
+  font-size: 0.9rem;
+  line-height: 1;
+  margin-left: auto;
+}
+
+.player-milestones-tab__section[open] > .player-milestones-tab__section-header::after {
+  content: "▾";
+}
+
 .player-milestones-tab__section-header h3 {
+  flex: 1 1 auto;
+  width: 100%;
   margin: 0;
   font-size: 1.25rem;
+}
+
+.player-milestones-tab__section-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
 }
 
 .player-milestones-tab__items {

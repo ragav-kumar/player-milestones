@@ -9,13 +9,18 @@
   {{#if hasSections}}
     <div class="player-milestones-tab__sections">
       {{#each sections}}
-        <section class="player-milestones-tab__section" data-section-id="{{id}}">
-          <header class="player-milestones-tab__section-header">
+        <details
+          class="player-milestones-tab__section"
+          data-section-id="{{id}}"
+          open
+        >
+          <summary class="player-milestones-tab__section-header">
             <h3>{{name}}</h3>
-          </header>
+          </summary>
 
-          {{#if hasItems}}
-            <div class="player-milestones-tab__items">
+          <div class="player-milestones-tab__section-body">
+            {{#if hasItems}}
+              <div class="player-milestones-tab__items">
               {{#each items}}
                 {{#if isCustom}}
                   {{#if ../canManageCustomItems}}
@@ -157,34 +162,35 @@
             <p class="player-milestones-empty-state">No milestones are defined for this section yet.</p>
           {{/if}}
 
-          {{#if canManageCustomItems}}
-            <div class="player-milestones-tab__custom-add" data-custom-add-row="true" data-section-id="{{id}}">
-              <div class="player-milestones-tab__custom-fields">
-                <input
-                  type="text"
-                  data-custom-add-title-input="true"
-                  data-enter-action="add-custom-item"
-                  placeholder="Custom title"
-                />
-                <input
-                  type="text"
-                  data-custom-add-description-input="true"
-                  data-enter-action="add-custom-item"
-                  placeholder="Custom description"
-                />
+            {{#if canManageCustomItems}}
+              <div class="player-milestones-tab__custom-add" data-custom-add-row="true" data-section-id="{{id}}">
+                <div class="player-milestones-tab__custom-fields">
+                  <input
+                    type="text"
+                    data-custom-add-title-input="true"
+                    data-enter-action="add-custom-item"
+                    placeholder="Custom title"
+                  />
+                  <input
+                    type="text"
+                    data-custom-add-description-input="true"
+                    data-enter-action="add-custom-item"
+                    placeholder="Custom description"
+                  />
+                </div>
+                <button
+                  type="button"
+                  class="player-milestones-tab__icon-button"
+                  data-action="add-custom-item"
+                  title="Add custom item"
+                  aria-label="Add custom item"
+                >
+                  <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                </button>
               </div>
-              <button
-                type="button"
-                class="player-milestones-tab__icon-button"
-                data-action="add-custom-item"
-                title="Add custom item"
-                aria-label="Add custom item"
-              >
-                <i class="fa-solid fa-plus" aria-hidden="true"></i>
-              </button>
-            </div>
-          {{/if}}
-        </section>
+            {{/if}}
+          </div>
+        </details>
       {{/each}}
     </div>
   {{else}}
