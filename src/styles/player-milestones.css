@@ -86,6 +86,10 @@
   word-break: break-word;
 }
 
+.player-milestones-tab__item--checked .player-milestones-tab__item-copy {
+  opacity: 0.6;
+}
+
 .player-milestones-tab__description {
   color: var(--color-text-secondary, #b9b6aa);
 }

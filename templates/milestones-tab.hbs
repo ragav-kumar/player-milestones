@@ -27,7 +27,7 @@
                       data-editing="false"
                     >
                       <div class="player-milestones-tab__custom-display">
-                        <label class="player-milestones-tab__item">
+                        <label class="player-milestones-tab__item {{#if checked}}player-milestones-tab__item--checked{{/if}}">
                           <input
                             type="checkbox"
                             data-milestone-checkbox="true"
@@ -117,7 +117,7 @@
                       </div>
                     </div>
                   {{else}}
-                    <label class="player-milestones-tab__item">
+                    <label class="player-milestones-tab__item {{#if checked}}player-milestones-tab__item--checked{{/if}}">
                       <input
                         type="checkbox"
                         data-milestone-checkbox="true"
@@ -133,7 +133,7 @@
                     </label>
                   {{/if}}
                 {{else}}
-                  <label class="player-milestones-tab__item">
+                  <label class="player-milestones-tab__item {{#if checked}}player-milestones-tab__item--checked{{/if}}">
                     <input
                       type="checkbox"
                       data-milestone-checkbox="true"

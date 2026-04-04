@@ -63,4 +63,20 @@ describe("milestones tab template", () => {
 
     expect(template).toContain('class="player-milestones-tab__item-copy"');
   });
+
+  it("marks checked milestones with a dedicated state class so they can be visually dimmed", () => {
+    const templatePath = resolve(import.meta.dirname, "../templates/milestones-tab.hbs");
+    const template = readFileSync(templatePath, "utf8");
+
+    expect(template).toContain("player-milestones-tab__item--checked");
+    expect(template).toContain("{{#if checked}}");
+  });
+
+  it("includes styling that visually dims checked milestones", () => {
+    const stylesheetPath = resolve(import.meta.dirname, "../src/styles/player-milestones.css");
+    const stylesheet = readFileSync(stylesheetPath, "utf8");
+
+    expect(stylesheet).toContain(".player-milestones-tab__item--checked");
+    expect(stylesheet).toContain("opacity:");
+  });
 });
