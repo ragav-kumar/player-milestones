@@ -8,7 +8,8 @@ export const ACTOR_MILESTONES_FLAG_KEY = "milestonesState";
 
 export interface ActorMilestoneCustomItem {
   id: string;
-  label: string;
+  title: string;
+  description: string;
   checked: boolean;
 }
 
@@ -50,7 +51,8 @@ export interface SetMilestoneCheckedInput {
 export interface UpsertCustomMilestoneInput {
   sectionId: string;
   itemId?: string;
-  label: string;
+  title: string;
+  description?: string;
 }
 
 export interface RemoveCustomMilestoneInput {
@@ -138,8 +140,9 @@ export function upsertCustomMilestone(
   state: ActorMilestonesState,
   input: UpsertCustomMilestoneInput
 ): ActorMilestonesState {
-  const label = input.label.trim();
-  if (label === "") {
+  const title = input.title.trim();
+  const description = typeof input.description === "string" ? input.description.trim() : "";
+  if (title === "") {
     return state;
   }
 
@@ -151,12 +154,13 @@ export function upsertCustomMilestone(
   if (existingIndex >= 0) {
     const existing = customItems[existingIndex];
     if (existing) {
-      customItems[existingIndex] = { ...existing, label };
+      customItems[existingIndex] = { ...existing, title, description };
     }
   } else {
     customItems.push({
       id: itemId,
-      label,
+      title,
+      description,
       checked: false
     });
   }
@@ -228,8 +232,8 @@ function buildSectionData(
   }));
   const customItems = (sectionState?.customItems ?? []).map((item) => ({
     id: item.id,
-    label: item.label,
-    description: "",
+    label: item.title,
+    description: item.description,
     checked: item.checked,
     isCustom: true
   }));
@@ -273,14 +277,20 @@ function normalizeCustomItem(value: unknown): ActorMilestoneCustomItem | null {
     return null;
   }
 
-  const label = typeof record.label === "string" ? record.label.trim() : "";
-  if (label === "") {
+  const title =
+    typeof record.title === "string"
+      ? record.title.trim()
+      : typeof record.label === "string"
+        ? record.label.trim()
+        : "";
+  if (title === "") {
     return null;
   }
 
   return {
     id: nonEmptyString(record.id) ?? createStableId("custom"),
-    label,
+    title,
+    description: typeof record.description === "string" ? record.description : "",
     checked: record.checked === true
   };
 }

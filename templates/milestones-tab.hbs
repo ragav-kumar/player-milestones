@@ -24,37 +24,74 @@
                       data-custom-item-row="true"
                       data-section-id="{{../id}}"
                       data-item-id="{{id}}"
+                      data-editing="false"
                     >
-                      <label class="player-milestones-tab__checkbox-label">
-                        <input
-                          type="checkbox"
-                          data-milestone-checkbox="true"
-                          data-section-id="{{../id}}"
-                          data-item-id="{{id}}"
-                          data-custom-item="true"
-                          {{#if checked}}checked{{/if}}
-                          {{#unless ../canToggleMilestones}}disabled{{/unless}}
-                        />
-                        <span class="player-milestones-tab__item-copy">
-                          <strong>{{label}}</strong>
-                        </span>
-                      </label>
-                      <input type="text" value="{{label}}" data-custom-label-input="true" />
-                      <div class="player-milestones-tab__item-actions">
-                        <button
-                          type="button"
-                          class="player-milestones-tab__button"
-                          data-action="save-custom-item"
-                        >
-                          Save
-                        </button>
-                        <button
-                          type="button"
-                          class="player-milestones-tab__button player-milestones-tab__button--danger"
-                          data-action="remove-custom-item"
-                        >
-                          Remove
-                        </button>
+                      <div class="player-milestones-tab__custom-display">
+                        <label class="player-milestones-tab__item">
+                          <input
+                            type="checkbox"
+                            data-milestone-checkbox="true"
+                            data-section-id="{{../id}}"
+                            data-item-id="{{id}}"
+                            data-custom-item="true"
+                            {{#if checked}}checked{{/if}}
+                            {{#unless ../canToggleMilestones}}disabled{{/unless}}
+                          />
+                          <span class="player-milestones-tab__item-copy">
+                            <strong>{{label}}</strong>
+                            {{#if description}}
+                              <small class="player-milestones-tab__description">{{description}}</small>
+                            {{/if}}
+                          </span>
+                        </label>
+                        <div class="player-milestones-tab__item-actions">
+                          <button
+                            type="button"
+                            class="player-milestones-tab__icon-button"
+                            data-action="edit-custom-item"
+                            title="Edit custom item"
+                            aria-label="Edit custom item"
+                          >
+                            <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
+                          </button>
+                          <button
+                            type="button"
+                            class="player-milestones-tab__icon-button player-milestones-tab__button--danger"
+                            data-action="remove-custom-item"
+                            title="Remove custom item"
+                            aria-label="Remove custom item"
+                          >
+                            <i class="fa-solid fa-trash" aria-hidden="true"></i>
+                          </button>
+                        </div>
+                      </div>
+
+                      <div class="player-milestones-tab__custom-editor">
+                        <div class="player-milestones-tab__custom-fields">
+                          <input
+                            type="text"
+                            value="{{label}}"
+                            data-custom-title-input="true"
+                            placeholder="Custom title"
+                          />
+                          <input
+                            type="text"
+                            value="{{description}}"
+                            data-custom-description-input="true"
+                            placeholder="Custom description"
+                          />
+                        </div>
+                        <div class="player-milestones-tab__item-actions">
+                          <button
+                            type="button"
+                            class="player-milestones-tab__icon-button"
+                            data-action="save-custom-item"
+                            title="Save custom item"
+                            aria-label="Save custom item"
+                          >
+                            <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   {{else}}
@@ -100,17 +137,26 @@
 
           {{#if canManageCustomItems}}
             <div class="player-milestones-tab__custom-add" data-custom-add-row="true" data-section-id="{{id}}">
-              <input
-                type="text"
-                data-custom-add-input="true"
-                placeholder="Add a custom item for this character"
-              />
+              <div class="player-milestones-tab__custom-fields">
+                <input
+                  type="text"
+                  data-custom-add-title-input="true"
+                  placeholder="Custom title"
+                />
+                <input
+                  type="text"
+                  data-custom-add-description-input="true"
+                  placeholder="Custom description"
+                />
+              </div>
               <button
                 type="button"
-                class="player-milestones-tab__button"
+                class="player-milestones-tab__icon-button"
                 data-action="add-custom-item"
+                title="Add custom item"
+                aria-label="Add custom item"
               >
-                Add
+                <i class="fa-solid fa-plus" aria-hidden="true"></i>
               </button>
             </div>
           {{/if}}

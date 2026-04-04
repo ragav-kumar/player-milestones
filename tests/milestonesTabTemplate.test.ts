@@ -27,4 +27,17 @@ describe("milestones tab template", () => {
 
     expect(template).toContain("{{#unless ../canToggleMilestones}}disabled{{/unless}}");
   });
+
+  it("uses title and description fields plus icon actions for custom milestones", () => {
+    const templatePath = resolve(import.meta.dirname, "../templates/milestones-tab.hbs");
+    const template = readFileSync(templatePath, "utf8");
+
+    expect(template).toContain('data-custom-add-title-input="true"');
+    expect(template).toContain('data-custom-add-description-input="true"');
+    expect(template).toContain('data-action="edit-custom-item"');
+    expect(template).toContain('fa-solid fa-plus');
+    expect(template).toContain('fa-solid fa-pen-to-square');
+    expect(template).toContain('fa-solid fa-floppy-disk');
+    expect(template).toContain('fa-solid fa-trash');
+  });
 });

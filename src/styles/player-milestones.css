@@ -80,16 +80,38 @@
 }
 
 .player-milestones-tab__item--custom {
-  display: grid;
-  grid-template-columns: auto minmax(12rem, 1fr) auto;
+  display: flex;
+  flex-direction: column;
   gap: 0.5rem;
-  align-items: center;
+}
+
+.player-milestones-tab__custom-display,
+.player-milestones-tab__custom-editor {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.player-milestones-tab__custom-editor {
+  display: none;
+}
+
+.player-milestones-tab__item--custom[data-editing="true"] .player-milestones-tab__custom-display {
+  display: none;
+}
+
+.player-milestones-tab__item--custom[data-editing="true"] .player-milestones-tab__custom-editor {
+  display: flex;
 }
 
 .player-milestones-tab__checkbox-label {
-  display: inline-flex;
+  display: flex;
   gap: 0.35rem;
-  align-items: center;
+  align-items: flex-start;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .player-milestones-tab__item-actions,
@@ -100,21 +122,40 @@
   align-items: center;
 }
 
-.player-milestones-tab__custom-add {
-  align-items: stretch;
+.player-milestones-tab__item-actions {
+  margin-left: auto;
+  flex: 0 0 auto;
+  justify-content: flex-end;
+  flex-wrap: nowrap;
 }
 
-.player-milestones-tab__custom-add input[type="text"] {
-  flex: 1 1 14rem;
+.player-milestones-tab__custom-fields {
+  display: grid;
+  grid-template-columns: minmax(10rem, 1fr) minmax(14rem, 2fr);
+  gap: 0.5rem;
+  flex: 1 1 auto;
   min-width: 0;
 }
 
-.player-milestones-tab__custom-add .player-milestones-tab__button {
-  flex: 0 0 auto;
+.player-milestones-tab__custom-add,
+.player-milestones-tab__custom-editor {
+  align-items: stretch;
 }
 
-.player-milestones-tab__button {
+.player-milestones-tab__custom-fields input[type="text"] {
+  min-width: 0;
+}
+
+.player-milestones-tab__button,
+.player-milestones-tab__icon-button {
   white-space: nowrap;
+}
+
+.player-milestones-tab__icon-button {
+  min-width: 2.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .player-milestones-tab__button--danger {
@@ -257,6 +298,14 @@
 }
 
 @media (max-width: 720px) {
+  .player-milestones-tab__custom-display,
+  .player-milestones-tab__custom-editor,
+  .player-milestones-tab__custom-add {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .player-milestones-tab__custom-fields,
   .player-milestones-settings__milestone-row {
     grid-template-columns: 1fr;
   }

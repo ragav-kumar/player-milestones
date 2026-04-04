@@ -78,13 +78,27 @@ describe("actor milestone state", () => {
             spellbook: true,
             removed: true
           },
-          customItems: [{ id: "custom-1", label: "Bring spare torches", checked: true }]
+          customItems: [
+            {
+              id: "custom-1",
+              title: "Bring spare torches",
+              description: "Keep an extra light source ready for cave travel.",
+              checked: true
+            }
+          ]
         },
         removedSection: {
           checked: {
             ghost: true
           },
-          customItems: [{ id: "custom-ghost", label: "Should disappear", checked: false }]
+          customItems: [
+            {
+              id: "custom-ghost",
+              title: "Should disappear",
+              description: "",
+              checked: false
+            }
+          ]
         }
       }
     } satisfies ActorMilestonesState;
@@ -98,7 +112,14 @@ describe("actor milestone state", () => {
           checked: {
             spellbook: true
           },
-          customItems: [{ id: "custom-1", label: "Bring spare torches", checked: true }]
+          customItems: [
+            {
+              id: "custom-1",
+              title: "Bring spare torches",
+              description: "Keep an extra light source ready for cave travel.",
+              checked: true
+            }
+          ]
         },
         social: {
           checked: {},
@@ -126,7 +147,7 @@ describe("actor milestone state", () => {
       {
         id: "custom-1",
         label: "Bring spare torches",
-        description: "",
+        description: "Keep an extra light source ready for cave travel.",
         checked: true,
         isCustom: true
       }
@@ -139,7 +160,8 @@ describe("actor milestone state", () => {
 
     const added = upsertCustomMilestone(initial, {
       sectionId: "combat",
-      label: "Call out the enemy captain"
+      title: "Call out the enemy captain",
+      description: "Challenge the strongest foe in front of the party."
     });
 
     expect(added.sections.combat?.customItems).toHaveLength(1);
@@ -150,7 +172,8 @@ describe("actor milestone state", () => {
     const edited = upsertCustomMilestone(added, {
       sectionId: "combat",
       itemId: customId ?? "",
-      label: "Call out the enemy champion"
+      title: "Call out the enemy champion",
+      description: "Single out the toughest foe and draw their attention."
     });
     const toggled = setMilestoneChecked(edited, {
       sectionId: "combat",
@@ -163,7 +186,10 @@ describe("actor milestone state", () => {
       itemId: customId ?? ""
     });
 
-    expect(edited.sections.combat?.customItems[0]?.label).toBe("Call out the enemy champion");
+    expect(edited.sections.combat?.customItems[0]?.title).toBe("Call out the enemy champion");
+    expect(edited.sections.combat?.customItems[0]?.description).toBe(
+      "Single out the toughest foe and draw their attention."
+    );
     expect(toggled.sections.combat?.customItems[0]?.checked).toBe(true);
     expect(removed.sections.combat?.customItems).toEqual([]);
   });

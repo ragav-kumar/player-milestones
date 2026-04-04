@@ -155,10 +155,25 @@ async function onPanelClick(
 
   const action = actionElement.dataset.action ?? "";
   const isCustomManagementAction =
-    action === "add-custom-item" || action === "save-custom-item" || action === "remove-custom-item";
+    action === "add-custom-item" ||
+    action === "edit-custom-item" ||
+    action === "save-custom-item" ||
+    action === "remove-custom-item";
 
   if (isCustomManagementAction && !canCurrentUserManageCustomItems()) {
     event.preventDefault();
+    return;
+  }
+
+  if (action === "edit-custom-item") {
+    event.preventDefault();
+
+    const row = actionElement.closest<HTMLElement>("[data-custom-item-row='true']");
+    if (!row) {
+      return;
+    }
+
+    row.dataset.editing = "true";
     return;
   }
 
@@ -166,18 +181,23 @@ async function onPanelClick(
     event.preventDefault();
 
     const row = actionElement.closest<HTMLElement>("[data-custom-add-row='true']");
-    const input = row?.querySelector<HTMLInputElement>("[data-custom-add-input='true']");
+    const titleInput = row?.querySelector<HTMLInputElement>("[data-custom-add-title-input='true']");
+    const descriptionInput = row?.querySelector<HTMLInputElement>(
+      "[data-custom-add-description-input='true']"
+    );
     const sectionId = row?.dataset.sectionId ?? "";
-    const label = input?.value ?? "";
+    const title = titleInput?.value ?? "";
+    const description = descriptionInput?.value ?? "";
 
-    if (sectionId === "" || label.trim() === "") {
+    if (sectionId === "" || title.trim() === "") {
       return;
     }
 
     await updateActorMilestones(actor, application, root, (state) =>
       upsertCustomMilestone(state, {
         sectionId,
-        label
+        title,
+        description
       })
     );
     return;
@@ -187,12 +207,16 @@ async function onPanelClick(
     event.preventDefault();
 
     const row = actionElement.closest<HTMLElement>("[data-custom-item-row='true']");
-    const input = row?.querySelector<HTMLInputElement>("[data-custom-label-input='true']");
+    const titleInput = row?.querySelector<HTMLInputElement>("[data-custom-title-input='true']");
+    const descriptionInput = row?.querySelector<HTMLInputElement>(
+      "[data-custom-description-input='true']"
+    );
     const sectionId = row?.dataset.sectionId ?? "";
     const itemId = row?.dataset.itemId ?? "";
-    const label = input?.value ?? "";
+    const title = titleInput?.value ?? "";
+    const description = descriptionInput?.value ?? "";
 
-    if (sectionId === "" || itemId === "" || label.trim() === "") {
+    if (sectionId === "" || itemId === "" || title.trim() === "") {
       return;
     }
 
@@ -200,7 +224,8 @@ async function onPanelClick(
       upsertCustomMilestone(state, {
         sectionId,
         itemId,
-        label
+        title,
+        description
       })
     );
     return;
@@ -298,7 +323,14 @@ function renderMilestonesFallback(context: MilestonesTemplateContext): string {
   const sectionsHtml = context.sections
     .map((section) => {
       const itemsHtml = section.items
-        .map((item) => renderItemFallback(section.id, item, section.canManageCustomItems))
+        .map((item) =>
+          renderItemFallback(
+            section.id,
+            item,
+            section.canManageCustomItems,
+            section.canToggleMilestones
+          )
+        )
         .join("");
       const emptyState = section.hasItems
         ? ""
@@ -307,12 +339,27 @@ function renderMilestonesFallback(context: MilestonesTemplateContext): string {
       const addRowHtml = section.canManageCustomItems
         ? `
           <div class="player-milestones-tab__custom-add" data-custom-add-row="true" data-section-id="${escapeHtml(section.id)}">
-            <input
-              type="text"
-              data-custom-add-input="true"
-              placeholder="Add a custom item for this character"
-            />
-            <button type="button" data-action="add-custom-item">Add</button>
+            <div class="player-milestones-tab__custom-fields">
+              <input
+                type="text"
+                data-custom-add-title-input="true"
+                placeholder="Custom title"
+              />
+              <input
+                type="text"
+                data-custom-add-description-input="true"
+                placeholder="Custom description"
+              />
+            </div>
+            <button
+              type="button"
+              class="player-milestones-tab__icon-button"
+              data-action="add-custom-item"
+              title="Add custom item"
+              aria-label="Add custom item"
+            >
+              <i class="fa-solid fa-plus" aria-hidden="true"></i>
+            </button>
           </div>
         `
         : "";
@@ -335,47 +382,66 @@ function renderMilestonesFallback(context: MilestonesTemplateContext): string {
 function renderItemFallback(
   sectionId: string,
   item: MilestonesTabItemData,
-  canManageCustomItems: boolean
+  canManageCustomItems: boolean,
+  canToggleMilestones: boolean
 ): string {
   const checkedAttribute = item.checked ? " checked" : "";
+  const disabledAttribute = canToggleMilestones ? "" : " disabled";
+  const descriptionHtml =
+    item.description.trim() !== ""
+      ? `<p class="player-milestones-tab__description">${escapeHtml(item.description)}</p>`
+      : "";
 
   if (item.isCustom) {
     if (!canManageCustomItems) {
       return `
         <label class="player-milestones-tab__item">
-          <input type="checkbox" data-milestone-checkbox="true" data-section-id="${escapeHtml(sectionId)}" data-item-id="${escapeHtml(item.id)}" data-custom-item="true"${checkedAttribute} />
+          <input type="checkbox" data-milestone-checkbox="true" data-section-id="${escapeHtml(sectionId)}" data-item-id="${escapeHtml(item.id)}" data-custom-item="true"${checkedAttribute}${disabledAttribute} />
           <span class="player-milestones-tab__item-copy">
             <strong>${escapeHtml(item.label)}</strong>
+            ${descriptionHtml}
           </span>
         </label>
       `;
     }
 
     return `
-      <div class="player-milestones-tab__item player-milestones-tab__item--custom" data-custom-item-row="true" data-section-id="${escapeHtml(sectionId)}" data-item-id="${escapeHtml(item.id)}">
-        <label class="player-milestones-tab__checkbox-label">
-          <input type="checkbox" data-milestone-checkbox="true" data-section-id="${escapeHtml(sectionId)}" data-item-id="${escapeHtml(item.id)}" data-custom-item="true"${checkedAttribute} />
-          <span class="player-milestones-tab__item-copy">
-            <strong>${escapeHtml(item.label)}</strong>
-          </span>
-        </label>
-        <input type="text" value="${escapeHtml(item.label)}" data-custom-label-input="true" />
-        <div class="player-milestones-tab__item-actions">
-          <button type="button" data-action="save-custom-item">Save</button>
-          <button type="button" data-action="remove-custom-item">Remove</button>
+      <div class="player-milestones-tab__item player-milestones-tab__item--custom" data-custom-item-row="true" data-section-id="${escapeHtml(sectionId)}" data-item-id="${escapeHtml(item.id)}" data-editing="false">
+        <div class="player-milestones-tab__custom-display">
+          <label class="player-milestones-tab__item">
+            <input type="checkbox" data-milestone-checkbox="true" data-section-id="${escapeHtml(sectionId)}" data-item-id="${escapeHtml(item.id)}" data-custom-item="true"${checkedAttribute}${disabledAttribute} />
+            <span class="player-milestones-tab__item-copy">
+              <strong>${escapeHtml(item.label)}</strong>
+              ${descriptionHtml}
+            </span>
+          </label>
+          <div class="player-milestones-tab__item-actions">
+            <button type="button" class="player-milestones-tab__icon-button" data-action="edit-custom-item" title="Edit custom item" aria-label="Edit custom item">
+              <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
+            </button>
+            <button type="button" class="player-milestones-tab__icon-button player-milestones-tab__button--danger" data-action="remove-custom-item" title="Remove custom item" aria-label="Remove custom item">
+              <i class="fa-solid fa-trash" aria-hidden="true"></i>
+            </button>
+          </div>
+        </div>
+        <div class="player-milestones-tab__custom-editor">
+          <div class="player-milestones-tab__custom-fields">
+            <input type="text" value="${escapeHtml(item.label)}" data-custom-title-input="true" placeholder="Custom title" />
+            <input type="text" value="${escapeHtml(item.description)}" data-custom-description-input="true" placeholder="Custom description" />
+          </div>
+          <div class="player-milestones-tab__item-actions">
+            <button type="button" class="player-milestones-tab__icon-button" data-action="save-custom-item" title="Save custom item" aria-label="Save custom item">
+              <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
+            </button>
+          </div>
         </div>
       </div>
     `;
   }
 
-  const descriptionHtml =
-    item.description.trim() !== ""
-      ? `<p class="player-milestones-tab__description">${escapeHtml(item.description)}</p>`
-      : "";
-
   return `
     <label class="player-milestones-tab__item">
-      <input type="checkbox" data-milestone-checkbox="true" data-section-id="${escapeHtml(sectionId)}" data-item-id="${escapeHtml(item.id)}" data-custom-item="false"${checkedAttribute} />
+      <input type="checkbox" data-milestone-checkbox="true" data-section-id="${escapeHtml(sectionId)}" data-item-id="${escapeHtml(item.id)}" data-custom-item="false"${checkedAttribute}${disabledAttribute} />
       <span>
         <strong>${escapeHtml(item.label)}</strong>
         ${descriptionHtml}
