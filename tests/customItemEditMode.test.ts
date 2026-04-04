@@ -6,6 +6,10 @@ describe("custom item edit mode", () => {
   it("allows only one custom row to be edited at a time and discards unsaved values on the previous row", () => {
     const panel = document.createElement("section");
     panel.innerHTML = `
+      <div data-custom-add-row="true">
+        <input type="text" value="Draft title" data-custom-add-title-input="true" />
+        <input type="text" value="Draft description" data-custom-add-description-input="true" />
+      </div>
       <div data-custom-item-row="true" data-item-id="alpha" data-editing="false">
         <div class="player-milestones-tab__custom-editor">
           <input type="text" value="Alpha title" data-custom-title-input="true" />
@@ -45,9 +49,17 @@ describe("custom item edit mode", () => {
 
     beginExclusiveCustomItemEdit(panel, secondRow);
 
+    const addTitleInput = panel.querySelector<HTMLInputElement>('[data-custom-add-title-input="true"]');
+    const addDescriptionInput = panel.querySelector<HTMLInputElement>(
+      '[data-custom-add-description-input="true"]'
+    );
+
     expect(firstRow.dataset.editing).toBe("false");
     expect(secondRow.dataset.editing).toBe("true");
     expect(firstTitleInput.value).toBe("Alpha title");
     expect(firstDescriptionInput.value).toBe("Alpha description");
+    expect(addTitleInput?.value).toBe("Draft title");
+    expect(addDescriptionInput?.value).toBe("Draft description");
   });
+
 });
