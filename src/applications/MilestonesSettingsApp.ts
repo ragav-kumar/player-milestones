@@ -85,6 +85,7 @@ export class MilestonesSettingsApp extends HandlebarsApplicationMixin(Applicatio
 
   #draftSettings: StandardMilestonesSettingsData = createDefaultStandardMilestonesSettings();
   #hasLoadedSettings = false;
+  #sectionsScrollTop = 0;
 
   protected override _prepareContext(_options: Record<string, unknown>): Promise<never> {
     void _options;
@@ -138,6 +139,11 @@ export class MilestonesSettingsApp extends HandlebarsApplicationMixin(Applicatio
         void this.#onAction(event);
       });
     });
+
+    const sectionsContainer = form.querySelector<HTMLElement>(".player-milestones-settings__sections");
+    if (sectionsContainer) {
+      sectionsContainer.scrollTop = this.#sectionsScrollTop;
+    }
   }
 
   async #onSubmit(event: SubmitEvent): Promise<void> {
@@ -166,6 +172,9 @@ export class MilestonesSettingsApp extends HandlebarsApplicationMixin(Applicatio
     if (!(form instanceof HTMLFormElement)) {
       return;
     }
+
+    const sectionsContainer = form.querySelector<HTMLElement>(".player-milestones-settings__sections");
+    this.#sectionsScrollTop = sectionsContainer?.scrollTop ?? 0;
 
     const snapshot = serializeStandardMilestonesFormData(new FormData(form), {
       keepEmptyRows: true
