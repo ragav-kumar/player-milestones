@@ -1,7 +1,7 @@
 import {
   MILESTONES_LOADING_TEXT,
+  MILESTONES_TAB_ICON_CLASS,
   MILESTONES_TAB_KEY,
-  MILESTONES_TAB_LABEL,
   MILESTONES_TAB_TOOLTIP
 } from "../constants";
 
@@ -69,7 +69,11 @@ function ensureTabButton(tabsNav: HTMLElement): void {
   button.dataset.playerMilestonesTab = "button";
   button.setAttribute("title", MILESTONES_TAB_TOOLTIP);
   button.setAttribute("aria-label", MILESTONES_TAB_TOOLTIP);
-  button.textContent = MILESTONES_TAB_LABEL;
+
+  const icon = document.createElement("i");
+  icon.className = MILESTONES_TAB_ICON_CLASS;
+  icon.setAttribute("aria-hidden", "true");
+  button.append(icon);
 
   tabsNav.append(button);
 }

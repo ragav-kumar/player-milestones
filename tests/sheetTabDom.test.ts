@@ -7,7 +7,7 @@ import { injectMilestonesTab } from "../src/dnd5e/sheetTabDom";
  * They intentionally exist before the implementation so we can use a red/green loop.
  */
 describe("injectMilestonesTab", () => {
-  it("adds an M tab with the requested tooltip and placeholder content", () => {
+  it("adds a trophy-icon tab with the requested tooltip and placeholder content", () => {
     const root = document.createElement("section");
     root.innerHTML = `
       <nav class="sheet-tabs tabs" data-group="primary">
@@ -23,8 +23,9 @@ describe("injectMilestonesTab", () => {
     const tabButton = root.querySelector<HTMLElement>('nav [data-tab="milestones"]');
     const tabPanel = root.querySelector<HTMLElement>('.tab[data-tab="milestones"]');
 
-    expect(tabButton?.textContent?.trim()).toBe("M");
-    expect(tabButton?.getAttribute("title")).toBe("personal milestones");
+    expect(tabButton?.querySelector("i.fa-solid.fa-trophy")).not.toBeNull();
+    expect(tabButton?.getAttribute("title")).toBe("Personal Milestones");
+    expect(tabButton?.getAttribute("aria-label")).toBe("Personal Milestones");
     expect(tabPanel?.textContent).toContain("Loading personal milestones...");
   });
 
@@ -45,7 +46,8 @@ describe("injectMilestonesTab", () => {
     const tabPanel = root.querySelector<HTMLElement>('.tab-body .tab[data-tab="milestones"]');
 
     expect(injected).toBe(true);
-    expect(tabButton?.textContent?.trim()).toBe("M");
+    expect(tabButton?.querySelector("i.fa-solid.fa-trophy")).not.toBeNull();
+    expect(tabButton?.getAttribute("title")).toBe("Personal Milestones");
     expect(tabPanel?.textContent).toContain("Loading personal milestones...");
   });
 
