@@ -83,6 +83,16 @@
   resize: vertical;
 }
 
+.player-milestones-settings__sections {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 20rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 0.25rem;
+}
+
 .player-milestones-settings__milestones {
   display: flex;
   flex-direction: column;
