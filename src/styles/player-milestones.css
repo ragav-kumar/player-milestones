@@ -17,3 +17,123 @@
 .player-milestones-settings {
   padding: 0.75rem;
 }
+
+.player-milestones-settings__form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.player-milestones-settings__intro p,
+.player-milestones-settings__panel .hint,
+.player-milestones-settings__empty-state {
+  margin: 0.25rem 0 0;
+  color: var(--color-text-secondary, #b9b6aa);
+}
+
+.player-milestones-settings__panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.875rem;
+  border: 1px solid var(--color-border-light-primary, #c9c7b8);
+  border-radius: 0.5rem;
+  background: rgb(0 0 0 / 2%);
+}
+
+.player-milestones-settings__panel-header,
+.player-milestones-settings__section-toolbar,
+.player-milestones-settings__section-footer,
+.player-milestones-settings__footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.player-milestones-settings__section-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid var(--color-border-light-tertiary, #d9d7ca);
+  border-radius: 0.5rem;
+  background: rgb(255 255 255 / 4%);
+}
+
+.player-milestones-settings__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.player-milestones-settings__field > span,
+.player-milestones-settings__level-row > span {
+  color: var(--color-text-primary, #e8e3d3);
+  font-weight: 600;
+}
+
+.player-milestones-settings__field--grow {
+  flex: 1 1 16rem;
+}
+
+.player-milestones-settings__field textarea {
+  min-height: 8rem;
+  resize: vertical;
+}
+
+.player-milestones-settings__milestones {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.player-milestones-settings__milestone-row {
+  display: grid;
+  grid-template-columns: minmax(12rem, 1fr) minmax(16rem, 2fr) auto;
+  gap: 0.5rem;
+  align-items: end;
+}
+
+.player-milestones-settings__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.player-milestones-settings__button,
+.player-milestones-settings__icon-button {
+  white-space: nowrap;
+}
+
+.player-milestones-settings__icon-button {
+  min-width: 2.25rem;
+}
+
+.player-milestones-settings__button--danger {
+  color: #d17b7b;
+}
+
+.player-milestones-settings__button--primary {
+  min-width: 12rem;
+}
+
+.player-milestones-settings__level-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  gap: 0.5rem;
+}
+
+.player-milestones-settings__level-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+@media (max-width: 720px) {
+  .player-milestones-settings__milestone-row {
+    grid-template-columns: 1fr;
+  }
+}

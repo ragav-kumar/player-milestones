@@ -1,5 +1,12 @@
 import { MilestonesSettingsApp } from "../applications/MilestonesSettingsApp";
-import { MODULE_ID, SETTINGS_MENU_KEY } from "../constants";
+import {
+  MODULE_ID,
+  SETTINGS_DEFAULT_MILESTONES_KEY,
+  SETTINGS_LEVEL_COSTS_KEY,
+  SETTINGS_MENU_KEY,
+  SETTINGS_SHARED_TOP_MATTER_KEY
+} from "../constants";
+import { createDefaultLevelCosts } from "./standardMilestones";
 
 /**
  * Registers the placeholder settings submenu that appears in Foundry's module settings UI.
@@ -15,17 +22,58 @@ import { MODULE_ID, SETTINGS_MENU_KEY } from "../constants";
 export function registerSettingsMenu(): void {
   // This guard keeps tests and unusual boot timing from exploding if `game.settings`
   // is not ready yet.
-  if (!game.settings) {
+  const settings = game.settings;
+  if (!settings) {
     console.warn(`${MODULE_ID} | game.settings is unavailable during initialization.`);
     return;
   }
 
-  game.settings.registerMenu(MODULE_ID, SETTINGS_MENU_KEY, {
+  registerSharedMilestoneSettings(settings);
+
+  settings.registerMenu(MODULE_ID as never, SETTINGS_MENU_KEY, {
     name: "Player Milestones",
     label: "Open Settings",
-    hint: "Open the placeholder settings page for the Player Milestones module.",
+    hint: "Configure the shared milestone defaults used across all player characters.",
     icon: "fa-solid fa-flag",
     type: MilestonesSettingsApp,
-    restricted: false
+    restricted: true
+  });
+}
+
+/**
+ * Registers the hidden world-scoped values that back the shared milestone settings UI.
+ */
+function registerSharedMilestoneSettings(settings: ClientSettings): void {
+  const registerSetting = settings.register.bind(settings) as (
+    namespace: string,
+    key: string,
+    data: object
+  ) => void;
+
+  registerSetting(MODULE_ID, SETTINGS_SHARED_TOP_MATTER_KEY, {
+    name: "Shared Top Matter",
+    hint: "Stored rich text shown above the shared milestones tab content.",
+    scope: "world",
+    config: false,
+    type: String,
+    default: ""
+  });
+
+  registerSetting(MODULE_ID, SETTINGS_DEFAULT_MILESTONES_KEY, {
+    name: "Default Milestones",
+    hint: "Stored section and milestone defaults shared by all PCs.",
+    scope: "world",
+    config: false,
+    type: Object,
+    default: []
+  });
+
+  registerSetting(MODULE_ID, SETTINGS_LEVEL_COSTS_KEY, {
+    name: "Level Costs",
+    hint: "Stored per-level milestone costs shared by all PCs.",
+    scope: "world",
+    config: false,
+    type: Object,
+    default: createDefaultLevelCosts()
   });
 }

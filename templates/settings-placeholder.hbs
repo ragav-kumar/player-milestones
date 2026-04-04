@@ -1,4 +1,218 @@
-<section class="player-milestones-settings">
-  <h2>Player Milestones</h2>
-  <p>This settings page is intentionally empty during the first scaffold pass.</p>
-</section>
+<form class="player-milestones-settings__form" data-player-milestones-settings-form>
+  <section class="player-milestones-settings__intro">
+    <h2>Shared Milestone Defaults</h2>
+    <p>
+      Configure the top matter, default milestone sections, and level costs shared across all PCs in
+      this world.
+    </p>
+  </section>
+
+  <section class="player-milestones-settings__panel">
+    <div class="player-milestones-settings__panel-header">
+      <div>
+        <h3>Top Matter</h3>
+        <p class="hint">
+          This text will appear at the top of the future milestones tab. Standard Foundry inline
+          references such as <code>@UUID[...]</code> can be stored here.
+        </p>
+      </div>
+    </div>
+
+    <label class="player-milestones-settings__field">
+      <span>Shared description</span>
+      <textarea
+        name="topMatter"
+        rows="6"
+        placeholder="Add shared context for the milestones tab here."
+      >{{topMatter}}</textarea>
+    </label>
+  </section>
+
+  <section class="player-milestones-settings__panel">
+    <div class="player-milestones-settings__panel-header">
+      <div>
+        <h3>Default Milestones</h3>
+        <p class="hint">
+          Create the shared achievement-style sections and milestones that will later be shown for all
+          player characters.
+        </p>
+      </div>
+      <button type="button" class="player-milestones-settings__button" data-action="add-section">
+        Add Section
+      </button>
+    </div>
+
+    <div class="player-milestones-settings__sections">
+      {{#each sections as |section|}}
+        <article class="player-milestones-settings__section-card">
+          <input type="hidden" name="sections.{{section.index}}.id" value="{{section.id}}">
+
+          <div class="player-milestones-settings__section-toolbar">
+            <label class="player-milestones-settings__field player-milestones-settings__field--grow">
+              <span>Section name</span>
+              <input
+                type="text"
+                name="sections.{{section.index}}.name"
+                value="{{section.name}}"
+                placeholder="Combat"
+              >
+            </label>
+
+            <div class="player-milestones-settings__controls">
+              <button
+                type="button"
+                class="player-milestones-settings__icon-button"
+                data-action="move-section-up"
+                data-section-index="{{section.index}}"
+                title="Move section up"
+                {{#if section.isFirst}}disabled{{/if}}
+              >
+                ↑
+              </button>
+              <button
+                type="button"
+                class="player-milestones-settings__icon-button"
+                data-action="move-section-down"
+                data-section-index="{{section.index}}"
+                title="Move section down"
+                {{#if section.isLast}}disabled{{/if}}
+              >
+                ↓
+              </button>
+              <button
+                type="button"
+                class="player-milestones-settings__button player-milestones-settings__button--danger"
+                data-action="remove-section"
+                data-section-index="{{section.index}}"
+              >
+                Remove Section
+              </button>
+            </div>
+          </div>
+
+          <div class="player-milestones-settings__milestones">
+            {{#each section.milestones as |milestone|}}
+              <div class="player-milestones-settings__milestone-row">
+                <input
+                  type="hidden"
+                  name="sections.{{section.index}}.milestones.{{milestone.index}}.id"
+                  value="{{milestone.id}}"
+                >
+
+                <label class="player-milestones-settings__field">
+                  <span>Title</span>
+                  <input
+                    type="text"
+                    name="sections.{{section.index}}.milestones.{{milestone.index}}.name"
+                    value="{{milestone.name}}"
+                    placeholder="Show Your Fighting Style"
+                  >
+                </label>
+
+                <label class="player-milestones-settings__field player-milestones-settings__field--grow">
+                  <span>Description</span>
+                  <input
+                    type="text"
+                    name="sections.{{section.index}}.milestones.{{milestone.index}}.description"
+                    value="{{milestone.description}}"
+                    placeholder="Use narration during combat to show how your character fights."
+                  >
+                </label>
+
+                <div class="player-milestones-settings__controls">
+                  <button
+                    type="button"
+                    class="player-milestones-settings__icon-button"
+                    data-action="move-item-up"
+                    data-section-index="{{section.index}}"
+                    data-milestone-index="{{milestone.index}}"
+                    title="Move milestone up"
+                    {{#if milestone.isFirst}}disabled{{/if}}
+                  >
+                    ↑
+                  </button>
+                  <button
+                    type="button"
+                    class="player-milestones-settings__icon-button"
+                    data-action="move-item-down"
+                    data-section-index="{{section.index}}"
+                    data-milestone-index="{{milestone.index}}"
+                    title="Move milestone down"
+                    {{#if milestone.isLast}}disabled{{/if}}
+                  >
+                    ↓
+                  </button>
+                  <button
+                    type="button"
+                    class="player-milestones-settings__button player-milestones-settings__button--danger"
+                    data-action="remove-item"
+                    data-section-index="{{section.index}}"
+                    data-milestone-index="{{milestone.index}}"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            {{else}}
+              <p class="player-milestones-settings__empty-state">
+                No milestones in this section yet. Add the first one below.
+              </p>
+            {{/each}}
+          </div>
+
+          <div class="player-milestones-settings__section-footer">
+            <button
+              type="button"
+              class="player-milestones-settings__button"
+              data-action="add-item"
+              data-section-index="{{section.index}}"
+            >
+              Add Milestone
+            </button>
+          </div>
+        </article>
+      {{else}}
+        <p class="player-milestones-settings__empty-state">
+          No shared milestone sections have been configured yet.
+        </p>
+      {{/each}}
+    </div>
+  </section>
+
+  <section class="player-milestones-settings__panel">
+    <div class="player-milestones-settings__panel-header">
+      <div>
+        <h3>Level Costs</h3>
+        <p class="hint">Enter the shared cost for each level from 1 to 19.</p>
+      </div>
+      <button
+        type="button"
+        class="player-milestones-settings__button"
+        data-action="reset-level-costs"
+      >
+        Reset Defaults
+      </button>
+    </div>
+
+    <div class="player-milestones-settings__level-grid">
+      {{#each levelRows as |row|}}
+        <label class="player-milestones-settings__level-row">
+          <span>Level {{row.level}}</span>
+          <input
+            type="number"
+            min="0"
+            step="1"
+            name="levelCosts.{{row.level}}"
+            value="{{row.cost}}"
+          >
+        </label>
+      {{/each}}
+    </div>
+  </section>
+
+  <footer class="player-milestones-settings__footer">
+    <button type="submit" class="player-milestones-settings__button player-milestones-settings__button--primary">
+      Save Shared Defaults
+    </button>
+  </footer>
+</form>
