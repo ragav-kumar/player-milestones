@@ -24,6 +24,7 @@ interface MilestonesTemplateSection extends Record<string, unknown> {
   name: string;
   hasItems: boolean;
   canManageCustomItems: boolean;
+  canToggleMilestones: boolean;
   items: MilestonesTabItemData[];
 }
 
@@ -60,13 +61,15 @@ export async function renderMilestonesTab(
   const normalizedState = normalizeActorMilestonesState(rawState, settings);
   const tabData = buildMilestonesTabData(settings, normalizedState);
   const canManageCustomItems = canCurrentUserManageCustomItems();
+  const canToggleMilestones = canCurrentUserToggleMilestones(application, actor);
   const context: MilestonesTemplateContext = {
     topMatterHtml: await enrichTopMatterHtml(tabData.topMatter),
     hasSections: tabData.sections.length > 0,
     sections: tabData.sections.map((section) => ({
       ...section,
       hasItems: section.items.length > 0,
-      canManageCustomItems
+      canManageCustomItems,
+      canToggleMilestones
     }))
   };
 
@@ -110,6 +113,11 @@ async function onPanelChange(
 
   const input = event.target;
   if (input.dataset.milestoneCheckbox !== "true") {
+    return;
+  }
+
+  if (!canCurrentUserToggleMilestones(application, actor)) {
+    input.checked = !input.checked;
     return;
   }
 
@@ -378,6 +386,36 @@ function renderItemFallback(
 
 function canCurrentUserManageCustomItems(): boolean {
   return typeof game !== "undefined" && game.user?.isGM === true;
+}
+
+function canCurrentUserToggleMilestones(application: unknown, actor: ActorFlagLike): boolean {
+  if (typeof game === "undefined") {
+    return true;
+  }
+
+  if (game.user?.isGM === true) {
+    return true;
+  }
+
+  const ownershipSource = application as { isEditable?: boolean; isOwner?: boolean };
+  if (ownershipSource.isEditable === true || ownershipSource.isOwner === true) {
+    return true;
+  }
+
+  const actorWithOwnership = actor as ActorFlagLike & {
+    isOwner?: boolean;
+    testUserPermission?: (user: unknown, permission: string) => boolean;
+  };
+
+  if (actorWithOwnership.isOwner === true) {
+    return true;
+  }
+
+  if (typeof actorWithOwnership.testUserPermission !== "function" || !game.user) {
+    return false;
+  }
+
+  return actorWithOwnership.testUserPermission(game.user, "OWNER");
 }
 
 function escapeHtml(value: string): string {

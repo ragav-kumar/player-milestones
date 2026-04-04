@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  normalizeActorMilestonesState,
-  setMilestoneChecked
+  getActorMilestonesState,
+  saveActorMilestonesState,
+  setMilestoneChecked,
+  type ActorFlagLike
 } from "../src/dnd5e/actorMilestones";
 import type { StandardMilestonesSettingsData } from "../src/settings/standardMilestones";
 
@@ -46,25 +48,64 @@ function createSettingsFixture(): StandardMilestonesSettingsData {
   };
 }
 
-describe("shared milestone toggle behavior", () => {
-  it("allows a previously checked shared milestone to be unchecked again", () => {
-    const settings = createSettingsFixture();
-    const initial = normalizeActorMilestonesState(undefined, settings);
+class MergeStyleFlagActor implements ActorFlagLike {
+  #storedValue: unknown;
 
-    const checked = setMilestoneChecked(initial, {
+  getFlag(scope: string, key: string): unknown {
+    void scope;
+    void key;
+    return this.#storedValue;
+  }
+
+  setFlag(scope: string, key: string, value: unknown): Promise<unknown> {
+    void scope;
+    void key;
+    this.#storedValue = deepMerge(this.#storedValue, value);
+    return Promise.resolve(this.#storedValue);
+  }
+
+}
+
+describe("shared milestone toggle persistence", () => {
+  it("fully replaces the persisted flag so a shared milestone can be unchecked again", async () => {
+    const settings = createSettingsFixture();
+    const actor = new MergeStyleFlagActor();
+
+    const checked = setMilestoneChecked(getActorMilestonesState(actor, settings), {
       sectionId: "combat",
       itemId: "narration",
       checked: true,
       isCustom: false
     });
-    const unchecked = setMilestoneChecked(checked, {
+    await saveActorMilestonesState(actor, checked);
+
+    const unchecked = setMilestoneChecked(getActorMilestonesState(actor, settings), {
       sectionId: "combat",
       itemId: "narration",
       checked: false,
       isCustom: false
     });
+    await saveActorMilestonesState(actor, unchecked);
 
-    expect(checked.sections.combat?.checked).toEqual({ narration: true });
-    expect(unchecked.sections.combat?.checked).toEqual({});
+    expect(getActorMilestonesState(actor, settings).sections.combat?.checked).toEqual({
+      narration: false
+    });
   });
 });
+
+function deepMerge(current: unknown, incoming: unknown): unknown {
+  if (!isRecord(current) || !isRecord(incoming)) {
+    return incoming;
+  }
+
+  const merged: Record<string, unknown> = { ...current };
+  for (const [key, value] of Object.entries(incoming)) {
+    merged[key] = deepMerge(merged[key], value);
+  }
+
+  return merged;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}

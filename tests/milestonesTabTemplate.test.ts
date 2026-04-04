@@ -20,4 +20,11 @@ describe("milestones tab template", () => {
     expect(template).toContain('data-action="save-custom-item"');
     expect(template).toContain('data-action="remove-custom-item"');
   });
+
+  it("disables milestone checkboxes when the viewer cannot update progress", () => {
+    const templatePath = resolve(import.meta.dirname, "../templates/milestones-tab.hbs");
+    const template = readFileSync(templatePath, "utf8");
+
+    expect(template).toContain("{{#unless ../canToggleMilestones}}disabled{{/unless}}");
+  });
 });

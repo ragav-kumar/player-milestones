@@ -1,5 +1,6 @@
 <section class="player-milestones-tab-content">
   {{#if topMatterHtml}}
+    <h3>Personal Milestones</h3>
     <div class="player-milestones-tab__top-matter">
       {{{topMatterHtml}}}
     </div>
@@ -32,6 +33,7 @@
                           data-item-id="{{id}}"
                           data-custom-item="true"
                           {{#if checked}}checked{{/if}}
+                          {{#unless ../canToggleMilestones}}disabled{{/unless}}
                         />
                         <span class="player-milestones-tab__item-copy">
                           <strong>{{label}}</strong>
@@ -64,6 +66,7 @@
                         data-item-id="{{id}}"
                         data-custom-item="true"
                         {{#if checked}}checked{{/if}}
+                        {{#unless ../canToggleMilestones}}disabled{{/unless}}
                       />
                       <span class="player-milestones-tab__item-copy">
                         <strong>{{label}}</strong>
@@ -79,6 +82,7 @@
                       data-item-id="{{id}}"
                       data-custom-item="false"
                       {{#if checked}}checked{{/if}}
+                      {{#unless ../canToggleMilestones}}disabled{{/unless}}
                     />
                     <span class="player-milestones-tab__item-copy">
                       <strong>{{label}}</strong>

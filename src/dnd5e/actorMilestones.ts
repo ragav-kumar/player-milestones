@@ -118,12 +118,7 @@ export function setMilestoneChecked(
   }
 
   const nextChecked = { ...section.checked };
-
-  if (input.checked) {
-    nextChecked[input.itemId] = true;
-  } else {
-    delete nextChecked[input.itemId];
-  }
+  nextChecked[input.itemId] = input.checked;
 
   return {
     sections: {
@@ -255,8 +250,9 @@ function normalizeSectionState(
   const checked: Record<string, boolean> = {};
 
   for (const milestone of section.milestones) {
-    if (checkedSource?.[milestone.id] === true) {
-      checked[milestone.id] = true;
+    const persistedValue = checkedSource?.[milestone.id];
+    if (typeof persistedValue === "boolean") {
+      checked[milestone.id] = persistedValue;
     }
   }
 
