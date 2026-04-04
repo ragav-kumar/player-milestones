@@ -28,6 +28,27 @@ describe("injectMilestonesTab", () => {
     expect(tabPanel?.textContent).toContain("Milestones content will be added here later.");
   });
 
+  it("supports the dnd5e v5 sidebar tab layout", () => {
+    const root = document.createElement("section");
+    root.innerHTML = `
+      <aside class="tabs tabs-right" data-group="primary">
+        <a class="item active" data-tab="details">Details</a>
+      </aside>
+      <div class="tab-body" data-container-id="tabs">
+        <section class="tab active" data-group="primary" data-tab="details">Details panel</section>
+      </div>
+    `;
+
+    const injected = injectMilestonesTab(root);
+
+    const tabButton = root.querySelector<HTMLElement>('.tabs-right [data-tab="milestones"]');
+    const tabPanel = root.querySelector<HTMLElement>('.tab-body .tab[data-tab="milestones"]');
+
+    expect(injected).toBe(true);
+    expect(tabButton?.textContent?.trim()).toBe("M");
+    expect(tabPanel?.textContent).toContain("Milestones content will be added here later.");
+  });
+
   it("does not create duplicate milestones tabs on repeated renders", () => {
     const root = document.createElement("section");
     root.innerHTML = `
