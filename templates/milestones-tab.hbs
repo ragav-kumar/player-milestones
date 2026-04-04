@@ -17,13 +17,46 @@
             <div class="player-milestones-tab__items">
               {{#each items}}
                 {{#if isCustom}}
-                  <div
-                    class="player-milestones-tab__item player-milestones-tab__item--custom"
-                    data-custom-item-row="true"
-                    data-section-id="{{../id}}"
-                    data-item-id="{{id}}"
-                  >
-                    <label class="player-milestones-tab__checkbox-label">
+                  {{#if ../canManageCustomItems}}
+                    <div
+                      class="player-milestones-tab__item player-milestones-tab__item--custom"
+                      data-custom-item-row="true"
+                      data-section-id="{{../id}}"
+                      data-item-id="{{id}}"
+                    >
+                      <label class="player-milestones-tab__checkbox-label">
+                        <input
+                          type="checkbox"
+                          data-milestone-checkbox="true"
+                          data-section-id="{{../id}}"
+                          data-item-id="{{id}}"
+                          data-custom-item="true"
+                          {{#if checked}}checked{{/if}}
+                        />
+                        <span class="player-milestones-tab__item-copy">
+                          <strong>{{label}}</strong>
+                        </span>
+                      </label>
+                      <input type="text" value="{{label}}" data-custom-label-input="true" />
+                      <div class="player-milestones-tab__item-actions">
+                        <button
+                          type="button"
+                          class="player-milestones-tab__button"
+                          data-action="save-custom-item"
+                        >
+                          Save
+                        </button>
+                        <button
+                          type="button"
+                          class="player-milestones-tab__button player-milestones-tab__button--danger"
+                          data-action="remove-custom-item"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  {{else}}
+                    <label class="player-milestones-tab__item">
                       <input
                         type="checkbox"
                         data-milestone-checkbox="true"
@@ -32,26 +65,11 @@
                         data-custom-item="true"
                         {{#if checked}}checked{{/if}}
                       />
-                      <span>Custom</span>
+                      <span class="player-milestones-tab__item-copy">
+                        <strong>{{label}}</strong>
+                      </span>
                     </label>
-                    <input type="text" value="{{label}}" data-custom-label-input="true" />
-                    <div class="player-milestones-tab__item-actions">
-                      <button
-                        type="button"
-                        class="player-milestones-tab__button"
-                        data-action="save-custom-item"
-                      >
-                        Save
-                      </button>
-                      <button
-                        type="button"
-                        class="player-milestones-tab__button player-milestones-tab__button--danger"
-                        data-action="remove-custom-item"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  </div>
+                  {{/if}}
                 {{else}}
                   <label class="player-milestones-tab__item">
                     <input
@@ -76,10 +94,22 @@
             <p class="player-milestones-empty-state">No milestones are defined for this section yet.</p>
           {{/if}}
 
-          <form class="player-milestones-tab__custom-add" data-custom-add-form="true" data-section-id="{{id}}">
-            <input type="text" name="customLabel" placeholder="Add a custom item for this character" />
-            <button type="submit" class="player-milestones-tab__button">Add</button>
-          </form>
+          {{#if canManageCustomItems}}
+            <div class="player-milestones-tab__custom-add" data-custom-add-row="true" data-section-id="{{id}}">
+              <input
+                type="text"
+                data-custom-add-input="true"
+                placeholder="Add a custom item for this character"
+              />
+              <button
+                type="button"
+                class="player-milestones-tab__button"
+                data-action="add-custom-item"
+              >
+                Add
+              </button>
+            </div>
+          {{/if}}
         </section>
       {{/each}}
     </div>

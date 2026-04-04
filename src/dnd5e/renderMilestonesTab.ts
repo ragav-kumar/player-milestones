@@ -23,6 +23,7 @@ interface MilestonesTemplateSection extends Record<string, unknown> {
   id: string;
   name: string;
   hasItems: boolean;
+  canManageCustomItems: boolean;
   items: MilestonesTabItemData[];
 }
 
@@ -58,12 +59,14 @@ export async function renderMilestonesTab(
   const rawState = actor.getFlag(MODULE_ID, ACTOR_MILESTONES_FLAG_KEY);
   const normalizedState = normalizeActorMilestonesState(rawState, settings);
   const tabData = buildMilestonesTabData(settings, normalizedState);
+  const canManageCustomItems = canCurrentUserManageCustomItems();
   const context: MilestonesTemplateContext = {
     topMatterHtml: await enrichTopMatterHtml(tabData.topMatter),
     hasSections: tabData.sections.length > 0,
     sections: tabData.sections.map((section) => ({
       ...section,
-      hasItems: section.items.length > 0
+      hasItems: section.items.length > 0,
+      canManageCustomItems
     }))
   };
 
@@ -89,9 +92,6 @@ function bindMilestonesTabEvents(
 
   panel.addEventListener("change", (event) => {
     void onPanelChange(event, actor, application, root);
-  });
-  panel.addEventListener("submit", (event) => {
-    void onPanelSubmit(event, actor, application, root);
   });
   panel.addEventListener("click", (event) => {
     void onPanelClick(event, actor, application, root);
@@ -130,38 +130,6 @@ async function onPanelChange(
   );
 }
 
-async function onPanelSubmit(
-  event: Event,
-  actor: ActorFlagLike,
-  application: unknown,
-  root: ParentNode
-): Promise<void> {
-  if (!(event.target instanceof HTMLFormElement)) {
-    return;
-  }
-
-  if (event.target.dataset.customAddForm !== "true") {
-    return;
-  }
-
-  event.preventDefault();
-
-  const sectionId = event.target.dataset.sectionId ?? "";
-  const rawLabel = new FormData(event.target).get("customLabel");
-  const label = typeof rawLabel === "string" ? rawLabel : "";
-
-  if (sectionId === "" || label.trim() === "") {
-    return;
-  }
-
-  await updateActorMilestones(actor, application, root, (state) =>
-    upsertCustomMilestone(state, {
-      sectionId,
-      label
-    })
-  );
-}
-
 async function onPanelClick(
   event: Event,
   actor: ActorFlagLike,
@@ -178,6 +146,35 @@ async function onPanelClick(
   }
 
   const action = actionElement.dataset.action ?? "";
+  const isCustomManagementAction =
+    action === "add-custom-item" || action === "save-custom-item" || action === "remove-custom-item";
+
+  if (isCustomManagementAction && !canCurrentUserManageCustomItems()) {
+    event.preventDefault();
+    return;
+  }
+
+  if (action === "add-custom-item") {
+    event.preventDefault();
+
+    const row = actionElement.closest<HTMLElement>("[data-custom-add-row='true']");
+    const input = row?.querySelector<HTMLInputElement>("[data-custom-add-input='true']");
+    const sectionId = row?.dataset.sectionId ?? "";
+    const label = input?.value ?? "";
+
+    if (sectionId === "" || label.trim() === "") {
+      return;
+    }
+
+    await updateActorMilestones(actor, application, root, (state) =>
+      upsertCustomMilestone(state, {
+        sectionId,
+        label
+      })
+    );
+    return;
+  }
+
   if (action === "save-custom-item") {
     event.preventDefault();
 
@@ -261,31 +258,23 @@ async function enrichTopMatterHtml(value: string): Promise<string> {
     return "";
   }
 
-  const maybeTextEditor = (globalThis as typeof globalThis & {
-    TextEditor?: {
-      enrichHTML?: (content: string, options?: object) => Promise<string> | string;
-    };
-  }).TextEditor;
-
-  const enrichHTML = maybeTextEditor?.enrichHTML;
-  if (typeof enrichHTML !== "function") {
+  if (typeof foundry === "undefined") {
     return value;
   }
 
-  const enriched = await enrichHTML(value, { async: true });
+  const enriched = await foundry.applications.ux.TextEditor.implementation.enrichHTML(value);
   return typeof enriched === "string" ? enriched : value;
 }
 
 async function renderMilestonesTemplate(context: MilestonesTemplateContext): Promise<string> {
-  const renderTemplateFn = (globalThis as typeof globalThis & {
-    renderTemplate?: (path: string, data: object) => Promise<string>;
-  }).renderTemplate;
-
-  if (typeof renderTemplateFn === "function") {
-    return renderTemplateFn(`modules/${MODULE_ID}/templates/milestones-tab.hbs`, context);
+  if (typeof foundry === "undefined") {
+    return renderMilestonesFallback(context);
   }
 
-  return renderMilestonesFallback(context);
+  return foundry.applications.handlebars.renderTemplate(
+    `modules/${MODULE_ID}/templates/milestones-tab.hbs`,
+    context
+  );
 }
 
 function renderMilestonesFallback(context: MilestonesTemplateContext): string {
@@ -301,11 +290,24 @@ function renderMilestonesFallback(context: MilestonesTemplateContext): string {
   const sectionsHtml = context.sections
     .map((section) => {
       const itemsHtml = section.items
-        .map((item) => renderItemFallback(section.id, item))
+        .map((item) => renderItemFallback(section.id, item, section.canManageCustomItems))
         .join("");
       const emptyState = section.hasItems
         ? ""
         : '<p class="player-milestones-empty-state">No milestones are defined for this section yet.</p>';
+
+      const addRowHtml = section.canManageCustomItems
+        ? `
+          <div class="player-milestones-tab__custom-add" data-custom-add-row="true" data-section-id="${escapeHtml(section.id)}">
+            <input
+              type="text"
+              data-custom-add-input="true"
+              placeholder="Add a custom item for this character"
+            />
+            <button type="button" data-action="add-custom-item">Add</button>
+          </div>
+        `
+        : "";
 
       return `
         <section class="player-milestones-tab__section" data-section-id="${escapeHtml(section.id)}">
@@ -313,10 +315,7 @@ function renderMilestonesFallback(context: MilestonesTemplateContext): string {
             <h3>${escapeHtml(section.name)}</h3>
           </header>
           <div class="player-milestones-tab__items">${itemsHtml || emptyState}</div>
-          <form class="player-milestones-tab__custom-add" data-custom-add-form="true" data-section-id="${escapeHtml(section.id)}">
-            <input type="text" name="customLabel" placeholder="Add a custom item for this character" />
-            <button type="submit">Add</button>
-          </form>
+          ${addRowHtml}
         </section>
       `;
     })
@@ -325,15 +324,32 @@ function renderMilestonesFallback(context: MilestonesTemplateContext): string {
   return `${topMatterHtml}<div class="player-milestones-tab__sections">${sectionsHtml}</div>`;
 }
 
-function renderItemFallback(sectionId: string, item: MilestonesTabItemData): string {
+function renderItemFallback(
+  sectionId: string,
+  item: MilestonesTabItemData,
+  canManageCustomItems: boolean
+): string {
   const checkedAttribute = item.checked ? " checked" : "";
 
   if (item.isCustom) {
+    if (!canManageCustomItems) {
+      return `
+        <label class="player-milestones-tab__item">
+          <input type="checkbox" data-milestone-checkbox="true" data-section-id="${escapeHtml(sectionId)}" data-item-id="${escapeHtml(item.id)}" data-custom-item="true"${checkedAttribute} />
+          <span class="player-milestones-tab__item-copy">
+            <strong>${escapeHtml(item.label)}</strong>
+          </span>
+        </label>
+      `;
+    }
+
     return `
       <div class="player-milestones-tab__item player-milestones-tab__item--custom" data-custom-item-row="true" data-section-id="${escapeHtml(sectionId)}" data-item-id="${escapeHtml(item.id)}">
         <label class="player-milestones-tab__checkbox-label">
           <input type="checkbox" data-milestone-checkbox="true" data-section-id="${escapeHtml(sectionId)}" data-item-id="${escapeHtml(item.id)}" data-custom-item="true"${checkedAttribute} />
-          <span>Custom</span>
+          <span class="player-milestones-tab__item-copy">
+            <strong>${escapeHtml(item.label)}</strong>
+          </span>
         </label>
         <input type="text" value="${escapeHtml(item.label)}" data-custom-label-input="true" />
         <div class="player-milestones-tab__item-actions">
@@ -358,6 +374,10 @@ function renderItemFallback(sectionId: string, item: MilestonesTabItemData): str
       </span>
     </label>
   `;
+}
+
+function canCurrentUserManageCustomItems(): boolean {
+  return typeof game !== "undefined" && game.user?.isGM === true;
 }
 
 function escapeHtml(value: string): string {
