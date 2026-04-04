@@ -67,6 +67,17 @@
                       </div>
 
                       <div class="player-milestones-tab__custom-editor">
+                        <label class="player-milestones-tab__checkbox-label">
+                          <input
+                            type="checkbox"
+                            data-milestone-checkbox="true"
+                            data-section-id="{{../id}}"
+                            data-item-id="{{id}}"
+                            data-custom-item="true"
+                            {{#if checked}}checked{{/if}}
+                            {{#unless ../canToggleMilestones}}disabled{{/unless}}
+                          />
+                        </label>
                         <div class="player-milestones-tab__custom-fields">
                           <input
                             type="text"
