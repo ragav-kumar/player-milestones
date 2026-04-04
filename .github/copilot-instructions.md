@@ -8,6 +8,7 @@
 - This project is **personal-use only**; the primary workflow is local Foundry testing, with eventual GitHub tagging for Forge use rather than full public release automation.
 
 ## Workflow rules
+- **Follow strict red/green TDD first**: write the failing test(s) first, run them to confirm the red state, and **pause for user review before implementing** the production change.
 - Work on a **dedicated feature branch**; do not assume direct work on `main`/`master`.
 - Make **small, reviewable changes** and keep files focused.
 - After creating this instructions file, **stop and wait for explicit user confirmation** before generating any other project files.
@@ -34,7 +35,7 @@ Only scaffold the first pass for these placeholder features:
 - Keep placeholder UI minimal and stable before adding data storage or richer interactions.
 
 ## Quality bar
-- Where practical, follow **red/green testing**: write a failing test first, confirm it fails, implement the minimal fix, then confirm the test passes.
+- **Red/green TDD is the default workflow for feature work and bug fixes**: write a failing test first, confirm it fails, implement the minimal fix, then confirm the test passes.
 - Before calling a step complete, verify the relevant commands succeed:
   - `npm run lint`
   - `npm run typecheck`
