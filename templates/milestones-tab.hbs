@@ -145,6 +145,7 @@
                             data-action="save-custom-item"
                             title="Save custom item"
                             aria-label="Save custom item"
+                            {{#unless description}}disabled{{/unless}}
                           >
                             <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
                           </button>
@@ -226,6 +227,7 @@
                   data-action="add-custom-item"
                   title="Add custom item"
                   aria-label="Add custom item"
+                  disabled
                 >
                   <i class="fa-solid fa-plus" aria-hidden="true"></i>
                 </button>

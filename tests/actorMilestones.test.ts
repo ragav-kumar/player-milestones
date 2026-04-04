@@ -168,7 +168,7 @@ describe("actor milestone state", () => {
     ]);
   });
 
-  it("tracks next-level progress, supports GM overrides, and only resets when the level cost changes", () => {
+  it("tracks next-level progress, supports GM overrides, and resets to zero whenever Level up is applied", () => {
     // Arrange
     const settings = createSettingsFixture();
 
@@ -195,7 +195,7 @@ describe("actor milestone state", () => {
 
     const sameCost = applyLevelCostToProgress(manuallyAdjusted, 3);
     expect(sameCost.progress).toEqual({
-      current: 7,
+      current: 0,
       targetCost: 3
     });
 
@@ -215,6 +215,11 @@ describe("actor milestone state", () => {
     const initial = normalizeActorMilestonesState(undefined, settings);
 
     // Act
+    const rejected = upsertCustomMilestone(initial, {
+      sectionId: "combat",
+      title: "Call out the enemy captain",
+      description: ""
+    });
     const added = upsertCustomMilestone(initial, {
       sectionId: "combat",
       title: "Call out the enemy captain",
@@ -244,6 +249,7 @@ describe("actor milestone state", () => {
     });
 
     // Assert
+    expect(rejected.sections.combat?.customItems).toEqual([]);
     expect(edited.sections.combat?.customItems[0]?.title).toBe("Call out the enemy champion");
     expect(edited.sections.combat?.customItems[0]?.description).toBe(
       "Single out the toughest foe and draw their attention."

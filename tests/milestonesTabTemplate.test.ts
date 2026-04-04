@@ -312,4 +312,115 @@ describe("milestones tab rendering behavior", () => {
     expect(playerPanel.querySelector('[data-progress-current-input="true"]')).toBeNull();
     expect(gmPanel.textContent).toContain("Ready to level up");
   });
+
+  it("keeps the Level up button disabled until the tracker is ready, even for an owner", async () => {
+    // Arrange
+    const notReadyState = createActorStateFixture({
+      current: 2,
+      targetCost: 3
+    });
+    const readyState = createActorStateFixture({
+      current: 3,
+      targetCost: 3
+    });
+
+    // Act
+    const notReadyPanel = await renderPanelFixture({
+      isGM: false,
+      actorState: notReadyState,
+      canOwnerToggle: true
+    });
+    const readyPanel = await renderPanelFixture({
+      isGM: false,
+      actorState: readyState,
+      canOwnerToggle: true
+    });
+
+    // Assert
+    expect(notReadyPanel.querySelector<HTMLButtonElement>('[data-action="level-up"]')?.disabled).toBe(
+      true
+    );
+    expect(readyPanel.querySelector<HTMLButtonElement>('[data-action="level-up"]')?.disabled).toBe(
+      false
+    );
+  });
+
+  it("renders invalid custom add and save controls as disabled until both title and description are present", async () => {
+    // Arrange
+    const actorState = createActorStateFixture();
+    const combatState = actorState.sections.combat;
+
+    if (!combatState || !combatState.customItems[0]) {
+      throw new Error("Expected the combat fixture to include one custom item.");
+    }
+
+    combatState.customItems[0] = {
+      ...combatState.customItems[0],
+      description: ""
+    };
+
+    // Act
+    const panel = await renderPanelFixture({
+      isGM: true,
+      actorState
+    });
+
+    // Assert
+    expect(panel.querySelector<HTMLButtonElement>('[data-action="add-custom-item"]')?.disabled).toBe(
+      true
+    );
+    expect(
+      panel.querySelector<HTMLButtonElement>('[data-action="save-custom-item"]')?.disabled
+    ).toBe(true);
+  });
+
+  it("ignores Enter in the custom add row until both fields are filled", async () => {
+    // Arrange
+    const settings = createSettingsFixture();
+    setGameFixture(settings, true);
+    const actor = new RenderTestActor(createActorStateFixture());
+    const root = document.createElement("section");
+    root.innerHTML = '<section data-player-milestones-tab="panel"></section>';
+
+    await renderMilestonesTab({ actor }, root);
+
+    const panel = root.querySelector<HTMLElement>('[data-player-milestones-tab="panel"]');
+    if (!panel) {
+      throw new Error("Expected the milestones panel to exist.");
+    }
+
+    const titleInput = panel.querySelector<HTMLInputElement>('[data-custom-add-title-input="true"]');
+    const descriptionInput = panel.querySelector<HTMLInputElement>(
+      '[data-custom-add-description-input="true"]'
+    );
+
+    if (!titleInput || !descriptionInput) {
+      throw new Error("Expected the custom add-row inputs to exist.");
+    }
+
+    // Act
+    titleInput.value = "Chart the ruins";
+    titleInput.dispatchEvent(new Event("input", { bubbles: true }));
+    titleInput.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+    await Promise.resolve();
+    await Promise.resolve();
+
+    const unchangedState = actor.getFlag("player-milestones", "milestonesState") as ActorMilestonesState;
+
+    descriptionInput.value = "Map one dangerous area before leaving it behind.";
+    descriptionInput.dispatchEvent(new Event("input", { bubbles: true }));
+    descriptionInput.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+    await Promise.resolve();
+    await Promise.resolve();
+
+    const updatedState = actor.getFlag("player-milestones", "milestonesState") as ActorMilestonesState;
+
+    // Assert
+    expect(unchangedState.sections.combat?.customItems).toHaveLength(1);
+    expect(updatedState.sections.combat?.customItems).toHaveLength(2);
+    expect(updatedState.sections.combat?.customItems[1]).toMatchObject({
+      title: "Chart the ruins",
+      description: "Map one dangerous area before leaving it behind."
+    });
+  });
 });

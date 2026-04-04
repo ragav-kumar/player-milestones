@@ -145,8 +145,8 @@ export function setMilestoneProgressCurrent(
 }
 
 /**
- * Applies a newly resolved level cost to the tracker, resetting current progress only when
- * the target cost actually changes.
+ * Applies a newly resolved level cost to the tracker, resetting current progress to zero each
+ * time the Level up workflow is used.
  */
 export function applyLevelCostToProgress(
   state: ActorMilestonesState,
@@ -154,16 +154,6 @@ export function applyLevelCostToProgress(
 ): ActorMilestonesState {
   const progress = cloneProgressState(state.progress);
   const normalizedTargetCost = normalizeInteger(targetCost, progress.targetCost || 1, { minimum: 1 });
-
-  if (progress.targetCost === normalizedTargetCost) {
-    return {
-      ...state,
-      progress: {
-        ...progress,
-        targetCost: normalizedTargetCost
-      }
-    };
-  }
 
   return {
     ...state,
@@ -222,7 +212,7 @@ export function upsertCustomMilestone(
 ): ActorMilestonesState {
   const title = input.title.trim();
   const description = typeof input.description === "string" ? input.description.trim() : "";
-  if (title === "") {
+  if (title === "" || description === "") {
     return state;
   }
 

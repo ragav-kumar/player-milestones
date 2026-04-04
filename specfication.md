@@ -99,7 +99,7 @@ Using **Level up** has the following effects:
 
 ### 5.2 Custom milestone items
 - Each section may also contain **custom, actor-specific milestone items**.
-- Custom items also display a checkbox, title, and optional description.
+- Custom items also display a checkbox, title, and description.
 - Custom items belong only to the current actor and do not become shared defaults.
 
 ### 5.3 Permission rules

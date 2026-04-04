@@ -1,6 +1,6 @@
 {
   "name": "player-milestones",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": true,
   "type": "module",
   "description": "Personal Foundry VTT milestone scaffolding for dnd5e.",
@@ -12,7 +12,8 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "audit": "npm audit",
-    "link:foundry": "node ./scripts/link-foundry.mjs"
+    "link:foundry": "node ./scripts/link-foundry.mjs",
+    "release:zip": "node ./scripts/release-zip.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",

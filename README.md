@@ -53,6 +53,14 @@ npm run lint
 npm run build
 ```
 
+### Build the Foundry release zip
+
+```bash
+npm run release:zip
+```
+
+This creates `release/player-milestones.zip` for GitHub releases / Foundry installs.
+
 ### Testing approach
 
 - Use **red/green TDD** for logic, state changes, settings behavior, DOM helpers, and event handlers.

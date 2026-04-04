@@ -84,6 +84,8 @@ export async function renderMilestonesTab(
   const tabData = buildMilestonesTabData(settings, stateForRender);
   const canManageCustomItems = canCurrentUserManageCustomItems();
   const canToggleMilestones = canCurrentUserToggleMilestones(application, actor);
+  const canUseLevelUp =
+    canToggleMilestones && tabData.progress.current >= tabData.progress.targetCost;
   const context: MilestonesTemplateContext = {
     topMatterHtml: await enrichTopMatterHtml(tabData.topMatter),
     progress: {
@@ -91,7 +93,7 @@ export async function renderMilestonesTab(
       targetCost: tabData.progress.targetCost,
       isReady: tabData.progress.current >= tabData.progress.targetCost,
       canEditCurrent: canManageCustomItems,
-      canLevelUp: canToggleMilestones
+      canLevelUp: canUseLevelUp
     },
     hasSections: tabData.sections.length > 0,
     sections: tabData.sections.map((section) => ({
@@ -103,6 +105,7 @@ export async function renderMilestonesTab(
   };
 
   panel.innerHTML = await renderMilestonesTemplate(context);
+  syncCustomActionButtonStates(panel);
   bindMilestonesTabEvents(panel, actor, application, root);
 
   if (JSON.stringify(rawState ?? null) !== JSON.stringify(stateForRender)) {
@@ -124,6 +127,9 @@ function bindMilestonesTabEvents(
 
   panel.addEventListener("change", (event) => {
     void onPanelChange(event, actor, application, root);
+  });
+  panel.addEventListener("input", (event) => {
+    onPanelInput(event);
   });
   panel.addEventListener("click", (event) => {
     void onPanelClick(event, actor, application, root);
@@ -188,6 +194,19 @@ async function onPanelChange(
   }
 }
 
+function onPanelInput(event: Event): void {
+  if (!(event.target instanceof HTMLInputElement)) {
+    return;
+  }
+
+  const row = event.target.closest<HTMLElement>("[data-custom-add-row='true'], [data-custom-item-row='true']");
+  if (!row) {
+    return;
+  }
+
+  syncCustomActionButtonState(row);
+}
+
 function onPanelKeyDown(event: KeyboardEvent): void {
   if (event.key !== "Enter" || event.shiftKey || event.ctrlKey || event.altKey || event.metaKey) {
     return;
@@ -210,6 +229,10 @@ function onPanelKeyDown(event: KeyboardEvent): void {
   const actionButton = row?.querySelector<HTMLElement>(`[data-action='${action}']`);
 
   if (!actionButton) {
+    return;
+  }
+
+  if (actionButton instanceof HTMLButtonElement && actionButton.disabled) {
     return;
   }
 
@@ -252,6 +275,14 @@ async function onPanelClick(
     }
 
     const settings = getStandardMilestonesSettings();
+    const currentState = normalizeActorMilestonesState(
+      actor.getFlag(MODULE_ID, ACTOR_MILESTONES_FLAG_KEY),
+      settings
+    );
+    if (currentState.progress.current < currentState.progress.targetCost) {
+      return;
+    }
+
     const nextTargetCost = resolveLevelCostFromActor(actor, settings);
 
     await updateActorMilestones(actor, application, root, (state) =>
@@ -269,6 +300,7 @@ async function onPanelClick(
     }
 
     beginExclusiveCustomItemEdit(root, row);
+    syncCustomActionButtonStates(root);
     return;
   }
 
@@ -284,7 +316,7 @@ async function onPanelClick(
     const title = titleInput?.value ?? "";
     const description = descriptionInput?.value ?? "";
 
-    if (sectionId === "" || title.trim() === "") {
+    if (sectionId === "" || title.trim() === "" || description.trim() === "") {
       return;
     }
 
@@ -311,7 +343,7 @@ async function onPanelClick(
     const title = titleInput?.value ?? "";
     const description = descriptionInput?.value ?? "";
 
-    if (sectionId === "" || itemId === "" || title.trim() === "") {
+    if (sectionId === "" || itemId === "" || title.trim() === "" || description.trim() === "") {
       return;
     }
 
@@ -335,6 +367,7 @@ async function onPanelClick(
     }
 
     discardCustomItemEdit(row);
+    syncCustomActionButtonState(row);
     return;
   }
 
@@ -356,6 +389,32 @@ async function onPanelClick(
       })
     );
   }
+}
+
+function syncCustomActionButtonStates(root: ParentNode): void {
+  root
+    .querySelectorAll<HTMLElement>("[data-custom-add-row='true'], [data-custom-item-row='true']")
+    .forEach((row) => {
+      syncCustomActionButtonState(row);
+    });
+}
+
+function syncCustomActionButtonState(row: HTMLElement): void {
+  const titleInput = row.querySelector<HTMLInputElement>(
+    "[data-custom-add-title-input='true'], [data-custom-title-input='true']"
+  );
+  const descriptionInput = row.querySelector<HTMLInputElement>(
+    "[data-custom-add-description-input='true'], [data-custom-description-input='true']"
+  );
+  const actionButton = row.querySelector<HTMLButtonElement>(
+    "[data-action='add-custom-item'], [data-action='save-custom-item']"
+  );
+
+  if (!actionButton) {
+    return;
+  }
+
+  actionButton.disabled = !hasNonEmptyValue(titleInput?.value) || !hasNonEmptyValue(descriptionInput?.value);
 }
 
 async function updateActorMilestones(
@@ -521,11 +580,13 @@ function renderMilestonesFallback(context: MilestonesTemplateContext): string {
               <input
                 type="text"
                 data-custom-add-title-input="true"
+                data-enter-action="add-custom-item"
                 placeholder="Custom title"
               />
               <input
                 type="text"
                 data-custom-add-description-input="true"
+                data-enter-action="add-custom-item"
                 placeholder="Custom description"
               />
             </div>
@@ -535,6 +596,7 @@ function renderMilestonesFallback(context: MilestonesTemplateContext): string {
               data-action="add-custom-item"
               title="Add custom item"
               aria-label="Add custom item"
+              disabled
             >
               <i class="fa-solid fa-plus" aria-hidden="true"></i>
             </button>
@@ -577,7 +639,7 @@ function renderProgressFallback(progress: MilestonesTemplateProgress): string {
             class="player-milestones-tab__button"
             data-action="level-up"${disabledAttribute}
           >
-            Levelled Up
+            Level up
           </button>
         </div>
       </div>
@@ -632,12 +694,15 @@ function renderItemFallback(
         </div>
         <div class="player-milestones-tab__custom-editor">
           <div class="player-milestones-tab__custom-fields">
-            <input type="text" value="${escapeHtml(item.label)}" data-custom-title-input="true" placeholder="Custom title" />
-            <input type="text" value="${escapeHtml(item.description)}" data-custom-description-input="true" placeholder="Custom description" />
+            <input type="text" value="${escapeHtml(item.label)}" data-custom-title-input="true" data-enter-action="save-custom-item" placeholder="Custom title" />
+            <input type="text" value="${escapeHtml(item.description)}" data-custom-description-input="true" data-enter-action="save-custom-item" placeholder="Custom description" />
           </div>
           <div class="player-milestones-tab__item-actions">
-            <button type="button" class="player-milestones-tab__icon-button" data-action="save-custom-item" title="Save custom item" aria-label="Save custom item">
+            <button type="button" class="player-milestones-tab__icon-button" data-action="save-custom-item" title="Save custom item" aria-label="Save custom item"${item.description.trim() === "" ? " disabled" : ""}>
               <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
+            </button>
+            <button type="button" class="player-milestones-tab__icon-button" data-action="cancel-custom-item" title="Cancel edit" aria-label="Cancel edit">
+              <i class="fa-solid fa-xmark" aria-hidden="true"></i>
             </button>
           </div>
         </div>
@@ -704,6 +769,10 @@ function canCurrentUserToggleMilestones(application: unknown, actor: ActorFlagLi
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   return value !== null && typeof value === "object" ? (value as Record<string, unknown>) : null;
+}
+
+function hasNonEmptyValue(value: string | undefined): boolean {
+  return typeof value === "string" && value.trim() !== "";
 }
 
 function readNumericValue(value: unknown): number | null {
