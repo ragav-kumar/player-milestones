@@ -7,6 +7,13 @@
 - Local testing will use a **Windows junction** into the local Foundry `Data/modules/player-milestones` folder.
 - This project is **personal-use only**; the primary workflow is local Foundry testing, with eventual GitHub tagging for Forge use rather than full public release automation.
 
+## Specification-first workflow
+- The root file `specfication.md` is the **behavioral source of truth** for this module.
+- **Always consult `specfication.md` before accepting, planning, or implementing any requested behavior change.**
+- If a request would add behavior not covered by the spec, or would conflict with the current spec, **pause and ask the user to update the spec first**.
+- If this instructions file and `specfication.md` ever disagree about product behavior, treat `specfication.md` as authoritative and flag the mismatch.
+- `specfication.md` is **human-owned** and must **not** be modified by the assistant in future turns. If a spec change is needed, ask the human to edit or approve the spec first rather than editing it directly.
+
 ## Workflow rules
 - **Use red/green TDD when the change is sensibly testable**: for stateful logic, data transforms, DOM helpers, event handlers, and settings behavior, write the failing test(s) first, confirm the red state, and **pause for user review before implementing** the production change.
 - Do **not** force test-first work for pure render/template/CSS changes when there is no meaningful automated harness; verify those changes in Foundry instead of writing brittle string-containment tests.
