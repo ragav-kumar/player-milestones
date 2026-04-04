@@ -74,6 +74,16 @@
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.player-milestones-tab__item-copy > strong,
+.player-milestones-tab__description {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .player-milestones-tab__description {

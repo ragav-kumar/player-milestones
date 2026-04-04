@@ -56,4 +56,11 @@ describe("milestones tab template", () => {
     expect(template).toContain('data-action="cancel-custom-item"');
     expect(template).toContain('fa-solid fa-xmark');
   });
+
+  it("renders item copy inside a dedicated wrapper so long titles and descriptions can wrap safely", () => {
+    const templatePath = resolve(import.meta.dirname, "../templates/milestones-tab.hbs");
+    const template = readFileSync(templatePath, "utf8");
+
+    expect(template).toContain('class="player-milestones-tab__item-copy"');
+  });
 });
