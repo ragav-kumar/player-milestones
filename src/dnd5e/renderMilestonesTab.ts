@@ -1,5 +1,6 @@
 import { MODULE_ID } from "../constants";
 import { getStandardMilestonesSettings } from "../settings/standardMilestones";
+import { beginExclusiveCustomItemEdit } from "./customItemEditMode";
 import {
   ACTOR_MILESTONES_FLAG_KEY,
   buildMilestonesTabData,
@@ -204,7 +205,7 @@ async function onPanelClick(
       return;
     }
 
-    row.dataset.editing = "true";
+    beginExclusiveCustomItemEdit(root, row);
     return;
   }
 
