@@ -63,6 +63,7 @@
   display: flex;
   gap: 0.5rem;
   align-items: flex-start;
+  min-width: 0;
 }
 
 .player-milestones-tab__item input[type="checkbox"] {
@@ -92,6 +93,7 @@
   align-items: flex-start;
   justify-content: space-between;
   width: 100%;
+  min-width: 0;
 }
 
 .player-milestones-tab__custom-editor {
@@ -112,6 +114,10 @@
   align-items: flex-start;
   flex: 1 1 auto;
   min-width: 0;
+}
+
+.player-milestones-tab__custom-editor > .player-milestones-tab__checkbox-label {
+  flex: 0 0 auto;
 }
 
 .player-milestones-tab__item-actions,
@@ -136,9 +142,9 @@
 
 .player-milestones-tab__custom-fields {
   display: grid;
-  grid-template-columns: minmax(10rem, 1fr) minmax(14rem, 2fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
   gap: 0.5rem;
-  flex: 1 1 auto;
+  flex: 1 1 0;
   min-width: 0;
   width: 100%;
 }

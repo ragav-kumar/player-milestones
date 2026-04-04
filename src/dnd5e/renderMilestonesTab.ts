@@ -1,6 +1,6 @@
 import { MODULE_ID } from "../constants";
 import { getStandardMilestonesSettings } from "../settings/standardMilestones";
-import { beginExclusiveCustomItemEdit } from "./customItemEditMode";
+import { beginExclusiveCustomItemEdit, discardCustomItemEdit } from "./customItemEditMode";
 import {
   ACTOR_MILESTONES_FLAG_KEY,
   buildMilestonesTabData,
@@ -190,6 +190,7 @@ async function onPanelClick(
     action === "add-custom-item" ||
     action === "edit-custom-item" ||
     action === "save-custom-item" ||
+    action === "cancel-custom-item" ||
     action === "remove-custom-item";
 
   if (isCustomManagementAction && !canCurrentUserManageCustomItems()) {
@@ -260,6 +261,18 @@ async function onPanelClick(
         description
       })
     );
+    return;
+  }
+
+  if (action === "cancel-custom-item") {
+    event.preventDefault();
+
+    const row = actionElement.closest<HTMLElement>("[data-custom-item-row='true']");
+    if (!row) {
+      return;
+    }
+
+    discardCustomItemEdit(row);
     return;
   }
 

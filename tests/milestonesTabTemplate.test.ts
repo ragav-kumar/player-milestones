@@ -48,4 +48,12 @@ describe("milestones tab template", () => {
     expect(template).toContain('data-enter-action="add-custom-item"');
     expect(template).toContain('data-enter-action="save-custom-item"');
   });
+
+  it("includes a cancel action so custom item edits can be discarded explicitly", () => {
+    const templatePath = resolve(import.meta.dirname, "../templates/milestones-tab.hbs");
+    const template = readFileSync(templatePath, "utf8");
+
+    expect(template).toContain('data-action="cancel-custom-item"');
+    expect(template).toContain('fa-solid fa-xmark');
+  });
 });
