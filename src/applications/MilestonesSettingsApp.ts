@@ -79,7 +79,7 @@ export class MilestonesSettingsApp extends HandlebarsApplicationMixin(Applicatio
 
   static override PARTS = {
     content: {
-      template: `modules/${MODULE_ID}/templates/settings-placeholder.hbs`
+      template: `modules/${MODULE_ID}/templates/milestones-settings.hbs`
     }
   };
 

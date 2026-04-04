@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { injectMilestonesTab } from "../src/dnd5e/sheetTabDom";
 
 /**
- * These tests cover the DOM helper that inserts the placeholder sheet tab.
+ * These tests cover the DOM helper that inserts the milestones sheet tab shell.
  * They intentionally exist before the implementation so we can use a red/green loop.
  */
 describe("injectMilestonesTab", () => {
@@ -25,7 +25,7 @@ describe("injectMilestonesTab", () => {
 
     expect(tabButton?.textContent?.trim()).toBe("M");
     expect(tabButton?.getAttribute("title")).toBe("personal milestones");
-    expect(tabPanel?.textContent).toContain("Milestones content will be added here later.");
+    expect(tabPanel?.textContent).toContain("Loading personal milestones...");
   });
 
   it("supports the dnd5e v5 sidebar tab layout", () => {
@@ -46,7 +46,32 @@ describe("injectMilestonesTab", () => {
 
     expect(injected).toBe(true);
     expect(tabButton?.textContent?.trim()).toBe("M");
-    expect(tabPanel?.textContent).toContain("Milestones content will be added here later.");
+    expect(tabPanel?.textContent).toContain("Loading personal milestones...");
+  });
+
+  it("prefers the inner tabs container when the sheet also has outer content wrappers", () => {
+    const root = document.createElement("section");
+    root.innerHTML = `
+      <section class="sheet-content">
+        <aside class="tabs tabs-right" data-group="primary">
+          <a class="item active" data-tab="details">Details</a>
+        </aside>
+        <section class="sheet-body">
+          <div class="character-sidebar">Sidebar content</div>
+          <div class="tab-body" data-container-id="tabs">
+            <section class="tab active" data-group="primary" data-tab="details">Details panel</section>
+          </div>
+        </section>
+      </section>
+    `;
+
+    injectMilestonesTab(root);
+
+    const tabsContainer = root.querySelector<HTMLElement>('[data-container-id="tabs"]');
+    const directPanelParent = root.querySelector<HTMLElement>('[data-player-milestones-tab="panel"]')?.parentElement;
+
+    expect(directPanelParent).toBe(tabsContainer);
+    expect(root.querySelector('.sheet-body > [data-player-milestones-tab="panel"]')).toBeNull();
   });
 
   it("does not create duplicate milestones tabs on repeated renders", () => {

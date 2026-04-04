@@ -1,0 +1,317 @@
+import { MODULE_ID } from "../constants";
+import type {
+  StandardMilestoneSection,
+  StandardMilestonesSettingsData
+} from "../settings/standardMilestones";
+
+export const ACTOR_MILESTONES_FLAG_KEY = "milestonesState";
+
+export interface ActorMilestoneCustomItem {
+  id: string;
+  label: string;
+  checked: boolean;
+}
+
+export interface ActorMilestoneSectionState {
+  checked: Record<string, boolean>;
+  customItems: ActorMilestoneCustomItem[];
+}
+
+export interface ActorMilestonesState {
+  sections: Record<string, ActorMilestoneSectionState>;
+}
+
+export interface MilestonesTabItemData {
+  id: string;
+  label: string;
+  description: string;
+  checked: boolean;
+  isCustom: boolean;
+}
+
+export interface MilestonesTabSectionData {
+  id: string;
+  name: string;
+  items: MilestonesTabItemData[];
+}
+
+export interface MilestonesTabData {
+  topMatter: string;
+  sections: MilestonesTabSectionData[];
+}
+
+export interface SetMilestoneCheckedInput {
+  sectionId: string;
+  itemId: string;
+  checked: boolean;
+  isCustom: boolean;
+}
+
+export interface UpsertCustomMilestoneInput {
+  sectionId: string;
+  itemId?: string;
+  label: string;
+}
+
+export interface RemoveCustomMilestoneInput {
+  sectionId: string;
+  itemId: string;
+}
+
+export interface ActorFlagLike {
+  getFlag(scope: string, key: string): unknown;
+  setFlag(scope: string, key: string, value: unknown): Promise<unknown>;
+}
+
+/**
+ * Normalizes the raw actor flag payload so the milestones tab can safely merge it with
+ * the current shared settings definition.
+ */
+export function normalizeActorMilestonesState(
+  value: unknown,
+  settings: StandardMilestonesSettingsData
+): ActorMilestonesState {
+  const source = asRecord(value);
+  const sourceSections = asRecord(source?.sections);
+  const sections = Object.fromEntries(
+    settings.sections.map((section) => [section.id, normalizeSectionState(sourceSections?.[section.id], section)])
+  );
+
+  return { sections };
+}
+
+/**
+ * Builds the template-friendly tab data by layering actor progress on top of the current
+ * world-scoped milestone settings.
+ */
+export function buildMilestonesTabData(
+  settings: StandardMilestonesSettingsData,
+  state: ActorMilestonesState
+): MilestonesTabData {
+  return {
+    topMatter: settings.topMatter,
+    sections: settings.sections.map((section) => buildSectionData(section, state.sections[section.id]))
+  };
+}
+
+/**
+ * Sets the checked state of either a shared milestone item or a custom actor-only item.
+ */
+export function setMilestoneChecked(
+  state: ActorMilestonesState,
+  input: SetMilestoneCheckedInput
+): ActorMilestonesState {
+  const section = getOrCreateSectionState(state.sections[input.sectionId]);
+
+  if (input.isCustom) {
+    return {
+      sections: {
+        ...state.sections,
+        [input.sectionId]: {
+          ...section,
+          customItems: section.customItems.map((item) =>
+            item.id === input.itemId ? { ...item, checked: input.checked } : item
+          )
+        }
+      }
+    };
+  }
+
+  const nextChecked = { ...section.checked };
+
+  if (input.checked) {
+    nextChecked[input.itemId] = true;
+  } else {
+    delete nextChecked[input.itemId];
+  }
+
+  return {
+    sections: {
+      ...state.sections,
+      [input.sectionId]: {
+        ...section,
+        checked: nextChecked
+      }
+    }
+  };
+}
+
+/**
+ * Adds a new custom milestone or updates the label of an existing one.
+ */
+export function upsertCustomMilestone(
+  state: ActorMilestonesState,
+  input: UpsertCustomMilestoneInput
+): ActorMilestonesState {
+  const label = input.label.trim();
+  if (label === "") {
+    return state;
+  }
+
+  const section = getOrCreateSectionState(state.sections[input.sectionId]);
+  const itemId = nonEmptyString(input.itemId) ?? createStableId("custom");
+  const existingIndex = section.customItems.findIndex((item) => item.id === itemId);
+
+  const customItems = [...section.customItems];
+  if (existingIndex >= 0) {
+    const existing = customItems[existingIndex];
+    if (existing) {
+      customItems[existingIndex] = { ...existing, label };
+    }
+  } else {
+    customItems.push({
+      id: itemId,
+      label,
+      checked: false
+    });
+  }
+
+  return {
+    sections: {
+      ...state.sections,
+      [input.sectionId]: {
+        ...section,
+        customItems
+      }
+    }
+  };
+}
+
+/**
+ * Removes a custom actor-only milestone item from one section.
+ */
+export function removeCustomMilestone(
+  state: ActorMilestonesState,
+  input: RemoveCustomMilestoneInput
+): ActorMilestonesState {
+  const section = state.sections[input.sectionId];
+  if (!section) {
+    return state;
+  }
+
+  return {
+    sections: {
+      ...state.sections,
+      [input.sectionId]: {
+        ...section,
+        customItems: section.customItems.filter((item) => item.id !== input.itemId)
+      }
+    }
+  };
+}
+
+/**
+ * Reads the actor's persisted milestone flag and normalizes it against the current settings.
+ */
+export function getActorMilestonesState(
+  actor: ActorFlagLike,
+  settings: StandardMilestonesSettingsData
+): ActorMilestonesState {
+  return normalizeActorMilestonesState(actor.getFlag(MODULE_ID, ACTOR_MILESTONES_FLAG_KEY), settings);
+}
+
+/**
+ * Saves the full actor-backed milestone state into the module's document flag space.
+ */
+export async function saveActorMilestonesState(
+  actor: ActorFlagLike,
+  state: ActorMilestonesState
+): Promise<void> {
+  await actor.setFlag(MODULE_ID, ACTOR_MILESTONES_FLAG_KEY, state);
+}
+
+function buildSectionData(
+  section: StandardMilestoneSection,
+  sectionState: ActorMilestoneSectionState | undefined
+): MilestonesTabSectionData {
+  const sharedItems = section.milestones.map((milestone) => ({
+    id: milestone.id,
+    label: milestone.name,
+    description: milestone.description,
+    checked: sectionState?.checked[milestone.id] === true,
+    isCustom: false
+  }));
+  const customItems = (sectionState?.customItems ?? []).map((item) => ({
+    id: item.id,
+    label: item.label,
+    description: "",
+    checked: item.checked,
+    isCustom: true
+  }));
+
+  return {
+    id: section.id,
+    name: section.name,
+    items: [...sharedItems, ...customItems]
+  };
+}
+
+function normalizeSectionState(
+  value: unknown,
+  section: StandardMilestoneSection
+): ActorMilestoneSectionState {
+  const record = asRecord(value);
+  const checkedSource = asRecord(record?.checked);
+  const checked: Record<string, boolean> = {};
+
+  for (const milestone of section.milestones) {
+    if (checkedSource?.[milestone.id] === true) {
+      checked[milestone.id] = true;
+    }
+  }
+
+  const rawCustomItems = Array.isArray(record?.customItems) ? record.customItems : [];
+  const customItems = rawCustomItems
+    .map((item) => normalizeCustomItem(item))
+    .filter((item): item is ActorMilestoneCustomItem => item !== null);
+
+  return {
+    checked,
+    customItems
+  };
+}
+
+function normalizeCustomItem(value: unknown): ActorMilestoneCustomItem | null {
+  const record = asRecord(value);
+  if (!record) {
+    return null;
+  }
+
+  const label = typeof record.label === "string" ? record.label.trim() : "";
+  if (label === "") {
+    return null;
+  }
+
+  return {
+    id: nonEmptyString(record.id) ?? createStableId("custom"),
+    label,
+    checked: record.checked === true
+  };
+}
+
+function getOrCreateSectionState(
+  value: ActorMilestoneSectionState | undefined
+): ActorMilestoneSectionState {
+  return value
+    ? {
+        checked: { ...value.checked },
+        customItems: value.customItems.map((item) => ({ ...item }))
+      }
+    : {
+        checked: {},
+        customItems: []
+      };
+}
+
+function createStableId(prefix: string): string {
+  const uuid = globalThis.crypto?.randomUUID?.();
+  return `${prefix}-${uuid ?? Math.random().toString(36).slice(2, 10)}`;
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value !== null && typeof value === "object" ? (value as Record<string, unknown>) : null;
+}
+
+function nonEmptyString(value: unknown): string | null {
+  return typeof value === "string" && value.trim() !== "" ? value : null;
+}

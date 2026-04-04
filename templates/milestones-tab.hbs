@@ -1,3 +1,89 @@
-<section class="player-milestones-tab-panel">
-  <p class="player-milestones-placeholder">Milestones content will be added here later.</p>
+<section class="player-milestones-tab-content">
+  {{#if topMatterHtml}}
+    <div class="player-milestones-tab__top-matter">
+      {{{topMatterHtml}}}
+    </div>
+  {{/if}}
+
+  {{#if hasSections}}
+    <div class="player-milestones-tab__sections">
+      {{#each sections}}
+        <section class="player-milestones-tab__section" data-section-id="{{id}}">
+          <header class="player-milestones-tab__section-header">
+            <h3>{{name}}</h3>
+          </header>
+
+          {{#if hasItems}}
+            <div class="player-milestones-tab__items">
+              {{#each items}}
+                {{#if isCustom}}
+                  <div
+                    class="player-milestones-tab__item player-milestones-tab__item--custom"
+                    data-custom-item-row="true"
+                    data-section-id="{{../id}}"
+                    data-item-id="{{id}}"
+                  >
+                    <label class="player-milestones-tab__checkbox-label">
+                      <input
+                        type="checkbox"
+                        data-milestone-checkbox="true"
+                        data-section-id="{{../id}}"
+                        data-item-id="{{id}}"
+                        data-custom-item="true"
+                        {{#if checked}}checked{{/if}}
+                      />
+                      <span>Custom</span>
+                    </label>
+                    <input type="text" value="{{label}}" data-custom-label-input="true" />
+                    <div class="player-milestones-tab__item-actions">
+                      <button
+                        type="button"
+                        class="player-milestones-tab__button"
+                        data-action="save-custom-item"
+                      >
+                        Save
+                      </button>
+                      <button
+                        type="button"
+                        class="player-milestones-tab__button player-milestones-tab__button--danger"
+                        data-action="remove-custom-item"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                {{else}}
+                  <label class="player-milestones-tab__item">
+                    <input
+                      type="checkbox"
+                      data-milestone-checkbox="true"
+                      data-section-id="{{../id}}"
+                      data-item-id="{{id}}"
+                      data-custom-item="false"
+                      {{#if checked}}checked{{/if}}
+                    />
+                    <span class="player-milestones-tab__item-copy">
+                      <strong>{{label}}</strong>
+                      {{#if description}}
+                        <small class="player-milestones-tab__description">{{description}}</small>
+                      {{/if}}
+                    </span>
+                  </label>
+                {{/if}}
+              {{/each}}
+            </div>
+          {{else}}
+            <p class="player-milestones-empty-state">No milestones are defined for this section yet.</p>
+          {{/if}}
+
+          <form class="player-milestones-tab__custom-add" data-custom-add-form="true" data-section-id="{{id}}">
+            <input type="text" name="customLabel" placeholder="Add a custom item for this character" />
+            <button type="submit" class="player-milestones-tab__button">Add</button>
+          </form>
+        </section>
+      {{/each}}
+    </div>
+  {{else}}
+    <p class="player-milestones-empty-state">No shared milestone sections are configured yet.</p>
+  {{/if}}
 </section>

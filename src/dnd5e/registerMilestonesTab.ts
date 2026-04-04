@@ -1,7 +1,8 @@
+import { renderMilestonesTab } from "./renderMilestonesTab";
 import { injectMilestonesTab } from "./sheetTabDom";
 
 /**
- * Registers the sheet-render hook that adds the placeholder `M` milestones tab.
+ * Registers the sheet-render hook that adds the `M` milestones tab.
  *
  * `renderApplicationV2` is a generic Foundry hook that fires whenever any modern v13-style
  * window finishes rendering. We use it instead of subclassing the dnd5e sheet directly,
@@ -16,13 +17,16 @@ export function registerMilestonesSheetIntegration(): void {
     }
 
     if (injectMilestonesTab(element)) {
+      void renderMilestonesTab(application, element);
       return;
     }
 
     // dnd5e sometimes finishes building its tab container on the next frame,
     // so we retry once after the browser has had a chance to settle the DOM.
     requestAnimationFrame(() => {
-      injectMilestonesTab(element);
+      if (injectMilestonesTab(element)) {
+        void renderMilestonesTab(application, element);
+      }
     });
   });
 }

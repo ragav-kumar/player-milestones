@@ -5,10 +5,115 @@
 }
 
 .player-milestones-tab-panel {
-  padding: 0.75rem 0;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding: 0.75rem;
 }
 
-.player-milestones-placeholder {
+.player-milestones-tab-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.player-milestones-tab__top-matter {
+  padding: 0.75rem;
+  border: 1px solid var(--color-border-light-primary, #c9c7b8);
+  border-radius: 0.5rem;
+  background: rgb(0 0 0 / 3%);
+}
+
+.player-milestones-tab__top-matter > :first-child {
+  margin-top: 0;
+}
+
+.player-milestones-tab__top-matter > :last-child {
+  margin-bottom: 0;
+}
+
+.player-milestones-tab__sections {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.player-milestones-tab__section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid var(--color-border-light-tertiary, #d9d7ca);
+  border-radius: 0.5rem;
+  background: rgb(255 255 255 / 3%);
+}
+
+.player-milestones-tab__section-header h3 {
+  margin: 0;
+}
+
+.player-milestones-tab__items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.player-milestones-tab__item {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.player-milestones-tab__item input[type="checkbox"] {
+  margin-top: 0.2rem;
+}
+
+.player-milestones-tab__item-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.player-milestones-tab__description {
+  color: var(--color-text-secondary, #b9b6aa);
+}
+
+.player-milestones-tab__item--custom {
+  display: grid;
+  grid-template-columns: auto minmax(12rem, 1fr) auto;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.player-milestones-tab__checkbox-label {
+  display: inline-flex;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.player-milestones-tab__item-actions,
+.player-milestones-tab__custom-add {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.player-milestones-tab__custom-add input[type="text"] {
+  flex: 1 1 14rem;
+}
+
+.player-milestones-tab__button {
+  white-space: nowrap;
+}
+
+.player-milestones-tab__button--danger {
+  color: #d17b7b;
+}
+
+.player-milestones-empty-state,
+.player-milestones-loading-state {
   margin: 0;
   color: var(--color-text-secondary, #666);
   font-style: italic;

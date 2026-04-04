@@ -9,4 +9,4 @@ export const SETTINGS_LEVEL_COSTS_KEY = "levelCosts";
 export const MILESTONES_TAB_KEY = "milestones";
 export const MILESTONES_TAB_LABEL = "M";
 export const MILESTONES_TAB_TOOLTIP = "personal milestones";
-export const MILESTONES_PLACEHOLDER_TEXT = "Milestones content will be added here later.";
+export const MILESTONES_LOADING_TEXT = "Loading personal milestones...";

@@ -1,12 +1,12 @@
 import {
-  MILESTONES_PLACEHOLDER_TEXT,
+  MILESTONES_LOADING_TEXT,
   MILESTONES_TAB_KEY,
   MILESTONES_TAB_LABEL,
   MILESTONES_TAB_TOOLTIP
 } from "../constants";
 
 /**
- * Injects the placeholder milestones tab into a rendered DnD5e character sheet.
+ * Injects the milestones tab shell into a rendered DnD5e character sheet.
  * The helper is idempotent so it is safe to call every time the sheet re-renders.
  *
  * The important Foundry/dnd5e detail here is that we are working with already-rendered DOM,
@@ -14,14 +14,12 @@ import {
  * sidebar-like `.tabs-right` container, while the tab panels are grouped under
  * `[data-container-id='tabs']`. Older fallback selectors are kept to reduce brittleness.
  *
- * @param root - The rendered sheet element that should receive the placeholder tab.
+ * @param root - The rendered sheet element that should receive the milestones tab.
  * @returns `true` when the expected tab containers were found.
  */
 export function injectMilestonesTab(root: ParentNode): boolean {
-  const tabsNav = root.querySelector<HTMLElement>(".tabs-right, nav.sheet-tabs.tabs, nav.sheet-tabs, .sheet-tabs.tabs");
-  const sheetBody = root.querySelector<HTMLElement>(
-    "[data-container-id='tabs'], .tab-body, .sheet-body, section.sheet-body, .sheet-content"
-  );
+  const tabsNav = findTabsNavigation(root);
+  const sheetBody = findTabPanelContainer(root);
 
   if (!tabsNav || !sheetBody) {
     return false;
@@ -31,6 +29,25 @@ export function injectMilestonesTab(root: ParentNode): boolean {
   ensureTabPanel(sheetBody);
 
   return true;
+}
+
+function findTabsNavigation(root: ParentNode): HTMLElement | null {
+  return (
+    root.querySelector<HTMLElement>(".tabs-right") ??
+    root.querySelector<HTMLElement>("nav.sheet-tabs.tabs") ??
+    root.querySelector<HTMLElement>("nav.sheet-tabs") ??
+    root.querySelector<HTMLElement>(".sheet-tabs.tabs")
+  );
+}
+
+function findTabPanelContainer(root: ParentNode): HTMLElement | null {
+  return (
+    root.querySelector<HTMLElement>("[data-container-id='tabs']") ??
+    root.querySelector<HTMLElement>(".tab-body") ??
+    root.querySelector<HTMLElement>("section.sheet-body") ??
+    root.querySelector<HTMLElement>(".sheet-body") ??
+    root.querySelector<HTMLElement>(".sheet-content")
+  );
 }
 
 /**
@@ -58,7 +75,7 @@ function ensureTabButton(tabsNav: HTMLElement): void {
 }
 
 /**
- * Adds the empty content panel that will eventually host milestone details.
+ * Adds the content panel shell that will host the live milestone checklist.
  */
 function ensureTabPanel(sheetBody: HTMLElement): void {
   if (sheetBody.querySelector('[data-player-milestones-tab="panel"]')) {
@@ -75,8 +92,8 @@ function ensureTabPanel(sheetBody: HTMLElement): void {
   panel.dataset.playerMilestonesTab = "panel";
 
   const message = document.createElement("p");
-  message.className = "player-milestones-placeholder";
-  message.textContent = MILESTONES_PLACEHOLDER_TEXT;
+  message.className = "player-milestones-loading-state";
+  message.textContent = MILESTONES_LOADING_TEXT;
 
   panel.append(message);
   sheetBody.append(panel);

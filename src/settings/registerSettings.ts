@@ -9,7 +9,7 @@ import {
 import { createDefaultLevelCosts } from "./standardMilestones";
 
 /**
- * Registers the placeholder settings submenu that appears in Foundry's module settings UI.
+ * Registers the settings submenu that appears in Foundry's module settings UI.
  *
  * At runtime, Foundry exposes a global `game` singleton that acts as the main API
  * surface for the current client session. `game.settings.registerMenu(namespace, key, config)`
