@@ -4,10 +4,12 @@ import { injectMilestonesTab } from "../src/dnd5e/sheetTabDom";
 
 /**
  * These tests cover the DOM helper that inserts the milestones sheet tab shell.
- * They intentionally exist before the implementation so we can use a red/green loop.
+ * They are good red/green tests because they exercise observable DOM behavior,
+ * not static template or stylesheet strings.
  */
 describe("injectMilestonesTab", () => {
   it("adds a trophy-icon tab with the requested tooltip and placeholder content", () => {
+    // Arrange
     const root = document.createElement("section");
     root.innerHTML = `
       <nav class="sheet-tabs tabs" data-group="primary">
@@ -18,11 +20,13 @@ describe("injectMilestonesTab", () => {
       </section>
     `;
 
+    // Act
     injectMilestonesTab(root);
 
     const tabButton = root.querySelector<HTMLElement>('nav [data-tab="milestones"]');
     const tabPanel = root.querySelector<HTMLElement>('.tab[data-tab="milestones"]');
 
+    // Assert
     expect(tabButton?.querySelector("i.fa-solid.fa-trophy")).not.toBeNull();
     expect(tabButton?.getAttribute("title")).toBe("Personal Milestones");
     expect(tabButton?.getAttribute("aria-label")).toBe("Personal Milestones");
@@ -30,6 +34,7 @@ describe("injectMilestonesTab", () => {
   });
 
   it("supports the dnd5e v5 sidebar tab layout", () => {
+    // Arrange
     const root = document.createElement("section");
     root.innerHTML = `
       <aside class="tabs tabs-right" data-group="primary">
@@ -40,11 +45,13 @@ describe("injectMilestonesTab", () => {
       </div>
     `;
 
+    // Act
     const injected = injectMilestonesTab(root);
 
     const tabButton = root.querySelector<HTMLElement>('.tabs-right [data-tab="milestones"]');
     const tabPanel = root.querySelector<HTMLElement>('.tab-body .tab[data-tab="milestones"]');
 
+    // Assert
     expect(injected).toBe(true);
     expect(tabButton?.querySelector("i.fa-solid.fa-trophy")).not.toBeNull();
     expect(tabButton?.getAttribute("title")).toBe("Personal Milestones");
@@ -52,6 +59,7 @@ describe("injectMilestonesTab", () => {
   });
 
   it("prefers the inner tabs container when the sheet also has outer content wrappers", () => {
+    // Arrange
     const root = document.createElement("section");
     root.innerHTML = `
       <section class="sheet-content">
@@ -67,16 +75,19 @@ describe("injectMilestonesTab", () => {
       </section>
     `;
 
+    // Act
     injectMilestonesTab(root);
 
     const tabsContainer = root.querySelector<HTMLElement>('[data-container-id="tabs"]');
     const directPanelParent = root.querySelector<HTMLElement>('[data-player-milestones-tab="panel"]')?.parentElement;
 
+    // Assert
     expect(directPanelParent).toBe(tabsContainer);
     expect(root.querySelector('.sheet-body > [data-player-milestones-tab="panel"]')).toBeNull();
   });
 
   it("does not create duplicate milestones tabs on repeated renders", () => {
+    // Arrange
     const root = document.createElement("section");
     root.innerHTML = `
       <nav class="sheet-tabs tabs" data-group="primary">
@@ -87,12 +98,14 @@ describe("injectMilestonesTab", () => {
       </section>
     `;
 
+    // Act
     injectMilestonesTab(root);
     injectMilestonesTab(root);
 
     const allButtons = root.querySelectorAll('[data-player-milestones-tab="button"]');
     const allPanels = root.querySelectorAll('[data-player-milestones-tab="panel"]');
 
+    // Assert
     expect(allButtons).toHaveLength(1);
     expect(allPanels).toHaveLength(1);
   });

@@ -53,6 +53,12 @@ npm run lint
 npm run build
 ```
 
+### Testing approach
+
+- Use **red/green TDD** for logic, state changes, settings behavior, DOM helpers, and event handlers.
+- If a change is **render-only** and there is no meaningful automated harness, prefer **manual Foundry verification** over brittle template or CSS string-assertion tests.
+- When you do add or revise a test, label the sections with `// Arrange`, `// Act`, and `// Assert`.
+
 ### Audit dependencies
 
 ```bash

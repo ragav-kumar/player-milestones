@@ -47,6 +47,7 @@ describe("registerSettingsMenu", () => {
   });
 
   it("registers a GM-only menu plus hidden world settings for shared milestone defaults", () => {
+    // Arrange
     const registerMenu = vi.fn();
     const register = vi.fn();
 
@@ -61,8 +62,10 @@ describe("registerSettingsMenu", () => {
       writable: true
     });
 
+    // Act
     registerSettingsMenu();
 
+    // Assert
     expect(registerMenu).toHaveBeenCalledWith(
       MODULE_ID,
       SETTINGS_MENU_KEY,
@@ -104,7 +107,13 @@ describe("registerSettingsMenu", () => {
 
 describe("standard milestone settings helpers", () => {
   it("returns the default editable settings shape", () => {
-    expect(createDefaultStandardMilestonesSettings()).toEqual({
+    // Arrange
+
+    // Act
+    const defaults = createDefaultStandardMilestonesSettings();
+
+    // Assert
+    expect(defaults).toEqual({
       topMatter: "",
       sections: [],
       levelCosts: expectedDefaultLevelCosts()
@@ -112,21 +121,33 @@ describe("standard milestone settings helpers", () => {
   });
 
   it("returns the requested default level costs for every level from 1 to 19", () => {
-    expect(createDefaultLevelCosts()).toEqual(expectedDefaultLevelCosts());
+    // Arrange
+
+    // Act
+    const levelCosts = createDefaultLevelCosts();
+
+    // Assert
+    expect(levelCosts).toEqual(expectedDefaultLevelCosts());
   });
 
   it("normalizes invalid top matter to an empty string", () => {
-    const normalized = normalizeStandardMilestonesSettings({
+    // Arrange
+    const invalidSettings = {
       topMatter: { bad: true },
       sections: [],
       levelCosts: expectedDefaultLevelCosts()
-    });
+    };
 
+    // Act
+    const normalized = normalizeStandardMilestonesSettings(invalidSettings);
+
+    // Assert
     expect(normalized.topMatter).toBe("");
   });
 
   it("normalizes malformed stored settings into a safe editable shape", () => {
-    const normalized = normalizeStandardMilestonesSettings({
+    // Arrange
+    const malformedSettings = {
       topMatter: 42,
       sections: [
         {
@@ -144,8 +165,12 @@ describe("standard milestone settings helpers", () => {
         2: null,
         19: -3
       }
-    });
+    };
 
+    // Act
+    const normalized = normalizeStandardMilestonesSettings(malformedSettings);
+
+    // Assert
     expect(normalized.topMatter).toBe("");
     expect(normalized.sections).toHaveLength(1);
     expect(normalized.sections[0]).toMatchObject({
@@ -159,6 +184,9 @@ describe("standard milestone settings helpers", () => {
   });
 
   it("reorders entire sections with move up and move down actions", () => {
+    // Arrange
+
+    // Act
     const movedUp = moveStandardMilestoneSection(
       [
         { id: "combat", name: "Combat", milestones: [] },
@@ -171,6 +199,7 @@ describe("standard milestone settings helpers", () => {
 
     const movedDown = moveStandardMilestoneSection(movedUp, 1, "down");
 
+    // Assert
     expect(movedUp.map((section: { id: string }) => section.id)).toEqual([
       "combat",
       "exploration",
@@ -184,6 +213,7 @@ describe("standard milestone settings helpers", () => {
   });
 
   it("reorders milestone items within a section with move up and move down actions", () => {
+    // Arrange
     const sections = [
       {
         id: "combat",
@@ -208,12 +238,14 @@ describe("standard milestone settings helpers", () => {
       }
     ];
 
+    // Act
     const movedUp = moveStandardMilestoneItem(sections, 0, 2, "up");
     const movedDown = moveStandardMilestoneItem(movedUp, 0, 1, "down");
 
     const movedUpSection = movedUp[0];
     const movedDownSection = movedDown[0];
 
+    // Assert
     expect(movedUpSection?.milestones.map((milestone: { id: string }) => milestone.id)).toEqual([
       "narration",
       "social-turn",
@@ -227,21 +259,23 @@ describe("standard milestone settings helpers", () => {
   });
 
   it("inserts and removes whole sections without disturbing the remaining order", () => {
-    const inserted = addStandardMilestoneSection([
+    // Arrange
+    const startingSections = [
       { id: "combat", name: "Combat", milestones: [] },
       { id: "social", name: "Social", milestones: [] }
-    ]);
+    ];
 
+    // Act
+    const inserted = addStandardMilestoneSection(startingSections);
+    const removed = removeStandardMilestoneSection(inserted, 1);
+    const insertedSection = inserted[2];
+
+    // Assert
     expect(inserted).toHaveLength(3);
     expect(inserted[2]).toMatchObject({
       name: "",
       milestones: []
     });
-
-    const removed = removeStandardMilestoneSection(inserted, 1);
-
-    const insertedSection = inserted[2];
-
     expect(removed.map((section: { id: string }) => section.id)).toEqual([
       "combat",
       insertedSection?.id
@@ -249,6 +283,7 @@ describe("standard milestone settings helpers", () => {
   });
 
   it("inserts and removes milestone rows within a section without disturbing the others", () => {
+    // Arrange
     const sections = [
       {
         id: "social",
@@ -263,10 +298,12 @@ describe("standard milestone settings helpers", () => {
       }
     ];
 
+    // Act
     const inserted = addStandardMilestoneItem(sections, 0);
 
     const insertedSection = inserted[0];
 
+    // Assert
     expect(insertedSection?.milestones).toHaveLength(2);
     expect(insertedSection?.milestones[1]).toMatchObject({
       name: "",
@@ -281,6 +318,7 @@ describe("standard milestone settings helpers", () => {
   });
 
   it("serializes edits to section names, milestone fields, and level cost values from form data", () => {
+    // Arrange
     const formData = new FormData();
     formData.set("topMatter", "<p>Shared intro with @UUID[Compendium.dnd5e.items.Item.abc]{linked item}</p>");
     formData.set("sections.0.id", "combat");
@@ -315,8 +353,10 @@ describe("standard milestone settings helpers", () => {
     formData.set("levelCosts.4", "8");
     formData.set("levelCosts.19", "12");
 
+    // Act
     const serialized = serializeStandardMilestonesFormData(formData);
 
+    // Assert
     expect(serialized.topMatter).toContain("@UUID[");
     expect(serialized.sections).toEqual([
       {

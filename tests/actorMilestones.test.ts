@@ -72,6 +72,7 @@ function createSettingsFixture(): StandardMilestonesSettingsData {
 
 describe("actor milestone state", () => {
   it("keeps progress by stable ids, defaults new shared items to unchecked, and prunes deleted data", () => {
+    // Arrange
     const settings = createSettingsFixture();
 
     const previousActorState = {
@@ -110,9 +111,11 @@ describe("actor milestone state", () => {
       }
     } satisfies ActorMilestonesState;
 
+    // Act
     const normalized = normalizeActorMilestonesState(previousActorState, settings);
     const tabData = buildMilestonesTabData(settings, normalized);
 
+    // Assert
     expect(normalized).toEqual({
       sections: {
         combat: {
@@ -166,9 +169,13 @@ describe("actor milestone state", () => {
   });
 
   it("tracks next-level progress, supports GM overrides, and only resets when the level cost changes", () => {
+    // Arrange
     const settings = createSettingsFixture();
+
+    // Act
     const initial = normalizeActorMilestonesState(undefined, settings);
 
+    // Assert
     expect(initial.progress).toEqual({
       current: 0,
       targetCost: 3
@@ -203,9 +210,11 @@ describe("actor milestone state", () => {
   });
 
   it("adds, edits, toggles, and removes custom items within a section", () => {
+    // Arrange
     const settings = createSettingsFixture();
     const initial = normalizeActorMilestonesState(undefined, settings);
 
+    // Act
     const added = upsertCustomMilestone(initial, {
       sectionId: "combat",
       title: "Call out the enemy captain",
@@ -234,6 +243,7 @@ describe("actor milestone state", () => {
       itemId: customId ?? ""
     });
 
+    // Assert
     expect(edited.sections.combat?.customItems[0]?.title).toBe("Call out the enemy champion");
     expect(edited.sections.combat?.customItems[0]?.description).toBe(
       "Single out the toughest foe and draw their attention."
@@ -243,8 +253,10 @@ describe("actor milestone state", () => {
   });
 
   it("preserves checked state when shared sections and items are renamed or reordered", () => {
+    // Arrange
     const originalSettings = createSettingsFixture();
 
+    // Act
     const state = setMilestoneChecked(normalizeActorMilestonesState(undefined, originalSettings), {
       sectionId: "combat",
       itemId: "narration",
@@ -288,6 +300,7 @@ describe("actor milestone state", () => {
     const tabData = buildMilestonesTabData(updatedSettings, state);
     const combatSection = tabData.sections.find((section) => section.id === "combat");
 
+    // Assert
     expect(combatSection?.name).toBe("Battlecraft");
     expect(combatSection?.items[1]).toEqual({
       id: "narration",

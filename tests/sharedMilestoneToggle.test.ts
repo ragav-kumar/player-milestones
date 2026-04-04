@@ -86,9 +86,11 @@ class InspirationFlagActor extends MergeStyleFlagActor {
 
 describe("shared milestone toggle persistence", () => {
   it("fully replaces the persisted flag so a shared milestone can be unchecked again", async () => {
+    // Arrange
     const settings = createSettingsFixture();
     const actor = new MergeStyleFlagActor();
 
+    // Act
     const checked = setMilestoneChecked(getActorMilestonesState(actor, settings), {
       sectionId: "combat",
       itemId: "narration",
@@ -105,15 +107,18 @@ describe("shared milestone toggle persistence", () => {
     });
     await saveActorMilestonesState(actor, unchecked);
 
+    // Assert
     expect(getActorMilestonesState(actor, settings).sections.combat?.checked).toEqual({
       narration: false
     });
   });
 
   it("tracks the current milestone counter as items are checked and unchecked", async () => {
+    // Arrange
     const settings = createSettingsFixture();
     const actor = new MergeStyleFlagActor();
 
+    // Act
     const checked = adjustMilestoneProgress(
       setMilestoneChecked(getActorMilestonesState(actor, settings), {
         sectionId: "combat",
@@ -125,6 +130,7 @@ describe("shared milestone toggle persistence", () => {
     );
     await saveActorMilestonesState(actor, checked);
 
+    // Assert
     expect(getActorMilestonesState(actor, settings).progress.current).toBe(1);
 
     const unchecked = adjustMilestoneProgress(
@@ -142,11 +148,14 @@ describe("shared milestone toggle persistence", () => {
   });
 
   it("grants inspiration only when the actor does not already have it", async () => {
+    // Arrange
     const actor = new InspirationFlagActor();
 
+    // Act
     await grantActorInspirationIfMissing(actor);
     await grantActorInspirationIfMissing(actor);
 
+    // Assert
     expect(actor.updateCalls).toEqual([{ "system.attributes.inspiration": true }]);
   });
 });
