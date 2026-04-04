@@ -41,6 +41,14 @@ describe("milestones tab template", () => {
     expect(template).toContain('fa-solid fa-trash');
   });
 
+  it("shows custom item descriptions even in the read-only non-GM view", () => {
+    const templatePath = resolve(import.meta.dirname, "../templates/milestones-tab.hbs");
+    const template = readFileSync(templatePath, "utf8");
+    const descriptionMatches = template.match(/player-milestones-tab__description/g) ?? [];
+
+    expect(descriptionMatches).toHaveLength(3);
+  });
+
   it("marks title and description inputs so Enter can trigger the closest save or add action", () => {
     const templatePath = resolve(import.meta.dirname, "../templates/milestones-tab.hbs");
     const template = readFileSync(templatePath, "utf8");

@@ -173,6 +173,9 @@
                       />
                       <span class="player-milestones-tab__item-copy">
                         <strong>{{label}}</strong>
+                        {{#if description}}
+                          <small class="player-milestones-tab__description">{{description}}</small>
+                        {{/if}}
                       </span>
                     </label>
                   {{/if}}
